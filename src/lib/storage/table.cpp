@@ -18,11 +18,14 @@
 namespace opossum {
 
 Table::Table(const ChunkOffset target_chunk_size) {
-  // Implementation goes here
+  this->chunk_size = target_chunk_size;
+  chunks.push_back(std::make_shared<Chunk>());
 }
 
 void Table::add_column(const std::string& name, const std::string& type) {
-  // Implementation goes here
+  DebugAssert(!this->row_count(), "add_column must be called before adding entries");
+  chunks.back();
+  // std::shared_ptr<BaseSegment> column = resolve_data_type(type);
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
@@ -49,10 +52,7 @@ ColumnID Table::column_id_by_name(const std::string& column_name) const {
   return ColumnID{0};
 }
 
-ChunkOffset Table::target_chunk_size() const {
-  // Implementation goes here
-  return 0;
-}
+ChunkOffset Table::target_chunk_size() const { return chunk_size; }
 
 const std::vector<std::string>& Table::column_names() const {
   throw std::runtime_error("Implement Table::column_names()");
