@@ -18,56 +18,67 @@
 namespace opossum {
 
 Table::Table(const ChunkOffset target_chunk_size) {
-  this->chunk_size = target_chunk_size;
-  chunks.push_back(std::make_shared<Chunk>());
+  _chunk_size = target_chunk_size;
+  _newest_chunk = std::make_shared<Chunk>();
 }
 
 void Table::add_column(const std::string& name, const std::string& type) {
-  DebugAssert(!this->row_count(), "add_column must be called before adding entries");
-  chunks.back();
-  // std::shared_ptr<BaseSegment> column = resolve_data_type(type);
+  DebugAssert(!row_count(), "add_column must be called before adding entries");
+  _column_names.push_back(name);
+  _column_types.push_back(type);
+  _name_id_mapping[name] = ColumnID{ (ColumnID) (_column_names.size() - 1)};
+  resolve_data_type(type, [&](const auto data_type_t) {
+    using ColumnDataType = typename decltype(data_type_t)::type;
+    const auto value_segment = std::make_shared<ValueSegment<ColumnDataType>>();
+    _newest_chunk->add_segment(value_segment);
+  });
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
-  // Implementation goes here
+  if(_newest_chunk->size() >= _chunk_size) {
+    _immutable_chunks.push_back(_newest_chunk);
+    _newest_chunk = std::make_shared<Chunk>();
+  }
+  _newest_chunk->append(values);
 }
 
 ColumnCount Table::column_count() const {
-  // Implementation goes here
-  return ColumnCount{0};
+  return ColumnCount{(ColumnID) _column_names.size()};
 }
 
 uint64_t Table::row_count() const {
-  // Implementation goes here
-  return 0;
+  return _chunk_size * _immutable_chunks.size() + _newest_chunk->size();
 }
 
 ChunkID Table::chunk_count() const {
   // Implementation goes here
-  return ChunkID{0};
+  return ChunkID{(ChunkID) _immutable_chunks.size() + 1};
 }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
-  // Implementation goes here
-  return ColumnID{0};
+  return _name_id_mapping.at(column_name);
 }
 
-ChunkOffset Table::target_chunk_size() const { return chunk_size; }
+ChunkOffset Table::target_chunk_size() const { return _chunk_size; }
 
 const std::vector<std::string>& Table::column_names() const {
-  throw std::runtime_error("Implement Table::column_names()");
+  return _column_names;
 }
 
 const std::string& Table::column_name(const ColumnID column_id) const {
-  throw std::runtime_error("Implement Table::column_name");
+  return _column_names[column_id];
 }
 
 const std::string& Table::column_type(const ColumnID column_id) const {
-  throw std::runtime_error("Implement Table::column_type");
+  return _column_types[column_id];
 }
 
-Chunk& Table::get_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::get_chunk"); }
+Chunk& Table::get_chunk(ChunkID chunk_id) {
+  return *_newest_chunk;
+}
 
-const Chunk& Table::get_chunk(ChunkID chunk_id) const { throw std::runtime_error("Implement Table::get_chunk"); }
+const Chunk& Table::get_chunk(ChunkID chunk_id) const {
+  return *_immutable_chunks[chunk_id];
+}
 
 }  // namespace opossum
