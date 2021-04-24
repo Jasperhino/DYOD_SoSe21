@@ -19,7 +19,15 @@ namespace opossum {
 
 Table::Table(const ChunkOffset target_chunk_size) {
   _chunk_size = target_chunk_size;
-  _newest_chunk = std::make_shared<Chunk>();
+  _chunks.push_back(std::make_shared<Chunk>());
+}
+
+void Table::_add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type) {
+  resolve_data_type(type, [&](const auto data_type_t) {
+    using ColumnDataType = typename decltype(data_type_t)::type;
+    const auto value_segment = std::make_shared<ValueSegment<ColumnDataType>>();
+    chunk->add_segment(value_segment);
+  });
 }
 
 void Table::add_column(const std::string& name, const std::string& type) {
@@ -27,19 +35,18 @@ void Table::add_column(const std::string& name, const std::string& type) {
   _column_names.push_back(name);
   _column_types.push_back(type);
   _name_id_mapping[name] = ColumnID{ (ColumnID) (_column_names.size() - 1)};
-  resolve_data_type(type, [&](const auto data_type_t) {
-    using ColumnDataType = typename decltype(data_type_t)::type;
-    const auto value_segment = std::make_shared<ValueSegment<ColumnDataType>>();
-    _newest_chunk->add_segment(value_segment);
-  });
+  _add_segment_to_chunk(_chunks.back(), type);
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
-  if(_newest_chunk->size() >= _chunk_size) {
-    _immutable_chunks.push_back(_newest_chunk);
-    _newest_chunk = std::make_shared<Chunk>();
+  if(_chunks.back()->size() >= _chunk_size) {
+    auto chunk = std::make_shared<Chunk>();
+    for (const std::string& type : _column_types) {
+      _add_segment_to_chunk(chunk, type);
+    }
+    _chunks.push_back(chunk);
   }
-  _newest_chunk->append(values);
+  _chunks.back()->append(values);
 }
 
 ColumnCount Table::column_count() const {
@@ -47,12 +54,12 @@ ColumnCount Table::column_count() const {
 }
 
 uint64_t Table::row_count() const {
-  return _chunk_size * _immutable_chunks.size() + _newest_chunk->size();
+  return _chunk_size * (_chunks.size() - 1) + _chunks.back()->size();
 }
 
 ChunkID Table::chunk_count() const {
   // Implementation goes here
-  return ChunkID{(ChunkID) _immutable_chunks.size() + 1};
+  return ChunkID{(ChunkID) _chunks.size()};
 }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
@@ -74,11 +81,11 @@ const std::string& Table::column_type(const ColumnID column_id) const {
 }
 
 Chunk& Table::get_chunk(ChunkID chunk_id) {
-  return *_newest_chunk;
+  return *_chunks[chunk_id];
 }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const {
-  return *_immutable_chunks[chunk_id];
+  return *_chunks[chunk_id];
 }
 
 }  // namespace opossum

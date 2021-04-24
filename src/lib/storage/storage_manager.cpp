@@ -10,38 +10,47 @@
 namespace opossum {
 
 StorageManager& StorageManager::get() {
-  return *(new StorageManager());
-  // A really hacky fix to get the tests to run - replace this with your implementation
+  static StorageManager instance;
+  return instance;
 }
 
 void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) {
-  // Implementation goes here
+  _tables[name] = table;
 }
 
 void StorageManager::drop_table(const std::string& name) {
-  // Implementation goes here
+  DebugAssert(has_table(name), "cannot drop non-existing table");
+  _tables.erase(name);
 }
 
 std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const {
-  // Implementation goes here
-  return nullptr;
+  return _tables.at(name);
 }
 
 bool StorageManager::has_table(const std::string& name) const {
-  // Implementation goes here
-  return false;
+  return _tables.find(name) != _tables.end();
 }
 
 std::vector<std::string> StorageManager::table_names() const {
-  throw std::runtime_error("Implement StorageManager::table_names");
+  std::vector<std::string> names;
+  std::transform(_tables.begin(), _tables.end(), std::back_inserter(names), [](auto entry){
+    return entry.first;
+  });
+  return names;
 }
 
 void StorageManager::print(std::ostream& out) const {
-  // Implementation goes here
+  for (auto const& [table_name, table] : _tables) {
+    out << table_name << ", "
+        << table->column_count() << ", "
+        << table->row_count() << ", "
+        << table->chunk_count()
+        << std::endl;
+  }
 }
 
 void StorageManager::reset() {
-  // Implementation goes here;
+  _tables.clear();
 }
 
 }  // namespace opossum

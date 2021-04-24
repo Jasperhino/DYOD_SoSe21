@@ -73,10 +73,11 @@ class Table : private Noncopyable {
 
  protected:
   ChunkOffset _chunk_size;
-  std::vector<std::shared_ptr<const Chunk>> _immutable_chunks = {};
-  std::shared_ptr<Chunk> _newest_chunk;
+  std::vector<std::shared_ptr<Chunk>> _chunks = {};
   std::vector<std::string> _column_names;
   std::vector<std::string> _column_types;
   std::unordered_map<std::string, ColumnID> _name_id_mapping {};
+ private:
+  void _add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
 };
 }  // namespace opossum
