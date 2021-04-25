@@ -5,9 +5,9 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <unordered_map>
 
 #include "base_segment.hpp"
 #include "chunk.hpp"

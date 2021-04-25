@@ -53,6 +53,8 @@ TEST_F(StorageTableTest, RowCount) {
 TEST_F(StorageTableTest, GetColumnName) {
   EXPECT_EQ(t.column_name(ColumnID{0}), "col_1");
   EXPECT_EQ(t.column_name(ColumnID{1}), "col_2");
+  EXPECT_EQ(t.column_names()[0], "col_1");
+  EXPECT_EQ(t.column_names()[1], "col_2");
   // TODO(anyone): Do we want checks here?
   // EXPECT_THROW(t.column_name(ColumnID{2}), std::exception);
 }

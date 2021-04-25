@@ -27,6 +27,22 @@ TEST_F(StorageStorageManagerTest, GetTable) {
   EXPECT_THROW(sm.get_table("third_table"), std::exception);
 }
 
+TEST_F(StorageStorageManagerTest, TableNames) {
+  auto& sm = StorageManager::get();
+  std::vector table_names = sm.table_names();
+  EXPECT_TRUE(std::find(table_names.begin(), table_names.end(), "first_table") != table_names.end());
+  EXPECT_TRUE(std::find(table_names.begin(), table_names.end(), "second_table") != table_names.end());
+}
+
+TEST_F(StorageStorageManagerTest, PrintTable) {
+  auto& sm = StorageManager::get();
+  std::ostringstream stream;
+  sm.print(stream);
+  std::string printed = stream.str();
+  EXPECT_TRUE(printed.find("second_table, 0, 0, 1") != std::string::npos);
+  EXPECT_TRUE(printed.find("first_table, 0, 0, 1") != std::string::npos);
+}
+
 TEST_F(StorageStorageManagerTest, DropTable) {
   auto& sm = StorageManager::get();
   sm.drop_table("first_table");
