@@ -34,7 +34,7 @@ void Table::add_column(const std::string& name, const std::string& type) {
   DebugAssert(!row_count(), "add_column must be called before adding entries");
   _column_names.push_back(name);
   _column_types.push_back(type);
-  _name_id_mapping[name] = (ColumnID) (_column_names.size() - 1);
+  _name_id_mapping[name] = (ColumnID)(_column_names.size() - 1);
   _add_segment_to_chunk(_chunks.back(), type);
 }
 
@@ -49,13 +49,11 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
   _chunks.back()->append(values);
 }
 
-ColumnCount Table::column_count() const { return (ColumnCount) _column_names.size(); }
+ColumnCount Table::column_count() const { return (ColumnCount)_column_names.size(); }
 
 uint64_t Table::row_count() const { return _chunk_size * (_chunks.size() - 1) + _chunks.back()->size(); }
 
-ChunkID Table::chunk_count() const {
-  return (ChunkID) _chunks.size();
-}
+ChunkID Table::chunk_count() const { return (ChunkID)_chunks.size(); }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const { return _name_id_mapping.at(column_name); }
 
