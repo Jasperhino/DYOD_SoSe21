@@ -33,6 +33,20 @@ TEST_F(StorageValueSegmentTest, AddValueOfSameType) {
   EXPECT_EQ(double_value_segment.size(), 1u);
 }
 
+TEST_F(StorageValueSegmentTest, GetValues) {
+  int_value_segment.append(3);
+  EXPECT_EQ(int_value_segment.values().at(0), 3);
+  EXPECT_EQ(type_cast<int>(int_value_segment[ChunkOffset{0}]), 3);
+
+  string_value_segment.append("Hello");
+  EXPECT_EQ(string_value_segment.values().at(0), "Hello");
+  EXPECT_EQ(type_cast<std::string>(string_value_segment[ChunkOffset{0}]), "Hello");
+
+  double_value_segment.append(3.14);
+  EXPECT_EQ(double_value_segment.values().at(0), 3.14);
+  EXPECT_EQ(type_cast<double>(double_value_segment[ChunkOffset{0}]), 3.14);
+}
+
 TEST_F(StorageValueSegmentTest, AddValueOfDifferentType) {
   int_value_segment.append(3.14);
   EXPECT_EQ(int_value_segment.size(), 1u);
