@@ -72,6 +72,9 @@ class Table : private Noncopyable {
   // note this is slow and not thread-safe and should be used for testing purposes only
   void append(const std::vector<AllTypeVariant>& values);
 
+  // compresses a ValueColumn into a DictionaryColumn
+  void compress_chunk(ChunkID chunk_id);
+
  protected:
   ChunkOffset _chunk_size;
   std::vector<std::shared_ptr<Chunk>> _chunks = {};
