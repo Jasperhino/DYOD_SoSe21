@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "all_type_variant.hpp"
 #include "types.hpp"
@@ -25,7 +26,20 @@ class DictionarySegment : public BaseSegment {
   /**
    * Creates a Dictionary segment from a given value segment.
    */
-  explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment);
+  explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
+    for(ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++){
+      AllTypeVariant element = base_segment[index];
+      _dictionary->append(element);
+    }
+    std::sort(_dictionary->begin(), _dictionary->end(), [](){
+
+    });
+
+    for(ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++){
+      AllTypeVariant element = base_segment[index];
+      _attribute_vector->append(_dictionary);
+    }
+  };
 
   // SEMINAR INFORMATION: Since most of these methods depend on the template parameter, you will have to implement
   // the DictionarySegment in this file. Replace the method signatures with actual implementations.

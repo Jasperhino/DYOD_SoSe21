@@ -10,26 +10,26 @@
 
 namespace opossum {
 
-// class StorageDictionarySegmentTest : public ::testing::Test {
-//  protected:
-//   std::shared_ptr<opossum::ValueSegment<int>> vc_int = std::make_shared<opossum::ValueSegment<int>>();
-//   std::shared_ptr<opossum::ValueSegment<std::string>> vc_str = std::make_shared<opossum::ValueSegment<std::string>>();
-// };
+ class StorageDictionarySegmentTest : public ::testing::Test {
+  protected:
+   std::shared_ptr<opossum::ValueSegment<int>> vc_int = std::make_shared<opossum::ValueSegment<int>>();
+   std::shared_ptr<opossum::ValueSegment<std::string>> vc_str = std::make_shared<opossum::ValueSegment<std::string>>();
+ };
 
-// TEST_F(StorageDictionarySegmentTest, CompressSegmentString) {
-//   vc_str->append("Bill");
-//   vc_str->append("Steve");
-//   vc_str->append("Alexander");
-//   vc_str->append("Steve");
-//   vc_str->append("Hasso");
-//   vc_str->append("Bill");
+ TEST_F(StorageDictionarySegmentTest, CompressSegmentString) {
+   vc_str->append("Bill");
+   vc_str->append("Steve");
+   vc_str->append("Alexander");
+   vc_str->append("Steve");
+   vc_str->append("Hasso");
+   vc_str->append("Bill");
 
-//   std::shared_ptr<BaseSegment> col;
-//   resolve_data_type("string", [&](auto type) {
-//     using Type = typename decltype(type)::type;
-//     col = std::make_shared<DictionarySegment<Type>>(vc_str);
-//   });
-//   auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<std::string>>(col);
+   std::shared_ptr<BaseSegment> col;
+   resolve_data_type("string", [&](auto type) {
+     using Type = typename decltype(type)::type;
+     col = std::make_shared<DictionarySegment<Type>>(vc_str);
+   });
+   auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<std::string>>(col);
 
 //   // Test attribute_vector size
 //   EXPECT_EQ(dict_col->size(), 6u);
