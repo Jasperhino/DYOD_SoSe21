@@ -7,9 +7,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cstdint>
 
 #include "all_type_variant.hpp"
 #include "base_attribute_vector.hpp"
+#include "fixed_size_attribute_vector.hpp"
 #include "base_segment.hpp"
 #include "type_cast.hpp"
 #include "types.hpp"
@@ -33,14 +35,20 @@ class DictionarySegment : public BaseSegment {
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
     std::set<T> _dictionary_set;
 
-    _attribute_vector = std::make_shared<std::vector<ValueID>>();
     for (ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++) {
       T element = type_cast<T>((*base_segment)[index]);
       _dictionary_set.emplace(element);
     }
-    // std::sort(_dictionary->begin(), _dictionary->end());
-
     _dictionary = std::make_shared<std::vector<T>>(_dictionary_set.begin(), _dictionary_set.end());
+
+    const size_t dictionary_size = unique_values_count();
+    if(dictionary_size < 256){
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint8_t>>();
+    } else if(dictionary_size < 65536){
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint16_t>>();
+    } else {
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint32_t>>();
+    }
 
     for (ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++) {
       AllTypeVariant element = (*base_segment)[index];
@@ -49,7 +57,7 @@ class DictionarySegment : public BaseSegment {
 
       if (result != _dictionary->end()) {
         ValueID dictionary_index = (ValueID)std::distance(_dictionary->begin(), result);
-        _attribute_vector->push_back(dictionary_index);
+        _attribute_vector->set(index, dictionary_index);
       }
     }
   }
@@ -117,8 +125,7 @@ class DictionarySegment : public BaseSegment {
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
-  // TODO(WE): change to BaseAttributeVector
-  std::shared_ptr<std::vector<ValueID>> _attribute_vector;
+  std::shared_ptr<BaseAttributeVector> _attribute_vector;
 };
 
 }  // namespace opossum
