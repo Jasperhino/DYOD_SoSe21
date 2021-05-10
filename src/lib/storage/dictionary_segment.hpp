@@ -43,11 +43,11 @@ class DictionarySegment : public BaseSegment {
 
     const size_t dictionary_size = unique_values_count();
     if(dictionary_size < 256){
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint8_t>>();
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint8_t>>(base_segment->size());
     } else if(dictionary_size < 65536){
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint16_t>>();
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint16_t>>(base_segment->size());
     } else {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint32_t>>();
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint32_t>>(base_segment->size());
     }
 
     for (ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++) {
