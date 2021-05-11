@@ -12,18 +12,30 @@ class StorageStorageManagerTest : public BaseTest {
  protected:
   void SetUp() override {
     auto& sm = StorageManager::get();
-    auto t1 = std::make_shared<Table>();
-    auto t2 = std::make_shared<Table>(4);
+    t1 = std::make_shared<Table>();
+    t2 = std::make_shared<Table>(4);
 
     sm.add_table("first_table", t1);
     sm.add_table("second_table", t2);
   }
+
+  std::shared_ptr<Table> t1 = nullptr;
+  std::shared_ptr<Table> t2 = nullptr;
 };
+
+TEST_F(StorageStorageManagerTest, AddTable) {
+  auto& sm = StorageManager::get();
+  auto t3 = std::make_shared<Table>();
+  EXPECT_THROW(sm.add_table("first_table", t3), std::exception);
+}
 
 TEST_F(StorageStorageManagerTest, GetTable) {
   auto& sm = StorageManager::get();
   auto t3 = sm.get_table("first_table");
   auto t4 = sm.get_table("second_table");
+  EXPECT_EQ(t3, t1);
+  EXPECT_EQ(t4, t2);
+
   EXPECT_THROW(sm.get_table("third_table"), std::exception);
 }
 
@@ -39,8 +51,8 @@ TEST_F(StorageStorageManagerTest, PrintTable) {
   std::ostringstream stream;
   sm.print(stream);
   std::string printed = stream.str();
-  EXPECT_TRUE(printed.find("second_table, 0, 0, 1") != std::string::npos);
-  EXPECT_TRUE(printed.find("first_table, 0, 0, 1") != std::string::npos);
+  EXPECT_TRUE(printed.find("Table: second_table, Column Count: 0, Row Count: 0, Chunk Count: 1") != std::string::npos);
+  EXPECT_TRUE(printed.find("Table: first_table, Column Count: 0, Row Count: 0, Chunk Count: 1") != std::string::npos);
 }
 
 TEST_F(StorageStorageManagerTest, DropTable) {

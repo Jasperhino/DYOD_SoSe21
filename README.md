@@ -1,3 +1,6 @@
+![Tests](https://github.com/Jasperhino/DYOD_SoSe21/actions/workflows/main.yml/badge.svg)
+
+
 # Hyrise (Codename OpossumDB)
 
 *Have a look at our [contributor guidelines](CONTRIBUTING.md)*

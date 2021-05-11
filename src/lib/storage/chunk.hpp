@@ -46,7 +46,7 @@ class Chunk : private Noncopyable {
   std::shared_mutex& get_mutex() { return _mutex; }
 
  protected:
-  std::vector<std::shared_ptr<BaseSegment>> _segments = {};
+  std::vector<std::shared_ptr<BaseSegment>> _segments;
   std::shared_mutex _mutex;
 };
 
