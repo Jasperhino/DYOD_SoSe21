@@ -1,11 +1,12 @@
 #pragma once
 
+#include <shared_mutex>
 #include "types.hpp"
 
 namespace opossum {
 
 // BaseAttributeVector is the abstract super class for all attribute vectors,
-// e.g., FittedAttributeVector
+// e.g., FixedSizeAttributeVector
 class BaseAttributeVector : private Noncopyable {
  public:
   BaseAttributeVector() = default;

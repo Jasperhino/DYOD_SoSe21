@@ -27,6 +27,9 @@ class Chunk : private Noncopyable {
   // adds a segment to the "right" of the chunk
   void add_segment(std::shared_ptr<BaseSegment> segment);
 
+  // replaces a segment at specific position
+  void replace_segment(ColumnID column_id, std::shared_ptr<BaseSegment> segment);
+
   // returns the number of columns (cannot exceed ColumnID (uint16_t))
   ColumnCount column_count() const;
 
@@ -40,8 +43,11 @@ class Chunk : private Noncopyable {
   // Returns the segment at a given position
   std::shared_ptr<BaseSegment> get_segment(ColumnID column_id) const;
 
+  std::shared_mutex& get_mutex() { return _mutex; }
+
  protected:
   std::vector<std::shared_ptr<BaseSegment>> _segments;
+  std::shared_mutex _mutex;
 };
 
 }  // namespace opossum

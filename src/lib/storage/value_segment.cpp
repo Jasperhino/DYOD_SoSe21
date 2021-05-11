@@ -32,6 +32,11 @@ const std::vector<T>& ValueSegment<T>::values() const {
   return _values;
 }
 
+template <typename T>
+size_t ValueSegment<T>::estimate_memory_usage() const {
+  return size() * sizeof(T);
+}
+
 EXPLICITLY_INSTANTIATE_DATA_TYPES(ValueSegment);
 
 }  // namespace opossum

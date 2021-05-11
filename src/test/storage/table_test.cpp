@@ -72,4 +72,20 @@ TEST_F(StorageTableTest, GetColumnIdByName) {
 
 TEST_F(StorageTableTest, GetChunkSize) { EXPECT_EQ(t.target_chunk_size(), 2u); }
 
+TEST_F(StorageTableTest, CompressChunk) {
+  t.append({4, "Hello,"});
+  t.append({6, "world"});
+  t.append({3, "!"});
+
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(), 2 * sizeof(uint32_t));
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{1})->estimate_memory_usage(), 2 * sizeof(std::string));
+
+  t.compress_chunk(ChunkID{0});
+  EXPECT_EQ(t.chunk_count(), 2u);
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(),
+            2 * (sizeof(uint32_t) + sizeof(uint8_t)));
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{1})->estimate_memory_usage(),
+            2 * (sizeof(std::string) + sizeof(uint8_t)));
+}
+
 }  // namespace opossum

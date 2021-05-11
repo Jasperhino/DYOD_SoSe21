@@ -69,4 +69,11 @@ TEST_F(StorageChunkTest, RetrieveSegment) {
   EXPECT_EQ((*base_segment)[3], AllTypeVariant{2});
 }
 
+TEST_F(StorageChunkTest, ReplaceSegment) {
+  c.add_segment(int_value_segment);
+  EXPECT_EQ((*c.get_segment(ColumnID{0}))[0], AllTypeVariant{4});
+  c.replace_segment(ColumnID{0}, string_value_segment);
+  EXPECT_EQ((*c.get_segment(ColumnID{0}))[0], AllTypeVariant{"Hello,"});
+}
+
 }  // namespace opossum

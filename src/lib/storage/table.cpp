@@ -6,9 +6,11 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "dictionary_segment.hpp"
 #include "value_segment.hpp"
 
 #include "resolve_type.hpp"
@@ -75,5 +77,41 @@ const std::string& Table::column_type(const ColumnID column_id) const { return _
 Chunk& Table::get_chunk(ChunkID chunk_id) { return *_chunks.at(chunk_id); }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *_chunks.at(chunk_id); }
+
+void Table::compress_chunk(ChunkID chunk_id) {
+  auto& chunk_old = get_chunk(chunk_id);
+  // lock chunk before compressing (prevents appending to this chunk)
+  std::shared_lock lock(chunk_old.get_mutex());
+
+  auto chunk_new = std::make_shared<Chunk>();
+
+  std::vector<std::thread> threads;
+  ColumnCount segment_count = chunk_old.column_count();
+  threads.reserve(segment_count);
+
+  for (ColumnID column_id{0}; column_id < segment_count; ++column_id) {
+    std::shared_ptr<BaseSegment> segment_empty;
+    chunk_new->add_segment(segment_empty);
+
+    auto thread = std::thread([&, column_id]() {
+      resolve_data_type(column_type(column_id), [&](auto type) {
+        using Type = typename decltype(type)::type;
+
+        auto segment_old = chunk_old.get_segment(column_id);
+        auto segment_new = std::make_shared<DictionarySegment<Type>>(segment_old);
+        chunk_new->replace_segment(column_id, segment_new);
+      });
+    });
+    threads.push_back(std::move(thread));
+  }
+
+  for (auto& thread : threads) {
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
+
+  _chunks[chunk_id] = chunk_new;
+}
 
 }  // namespace opossum

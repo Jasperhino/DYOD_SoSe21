@@ -15,9 +15,14 @@
 namespace opossum {
 
 void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
-  DebugAssert(column_count() == 0 || segment->size() == size(),
+  DebugAssert(segment == nullptr || column_count() == 0 || segment->size() == size(),
               "Segment has wrong size. Should be " + std::to_string(size()));
   _segments.push_back(segment);
+}
+
+void Chunk::replace_segment(ColumnID column_id, const std::shared_ptr<BaseSegment> segment) {
+  DebugAssert(column_id < column_count(), "segment with index not existing wrong size");
+  _segments[column_id] = segment;
 }
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <limits>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -71,6 +70,9 @@ class Table : private Noncopyable {
   // inserts a row at the end of the table
   // note this is slow and not thread-safe and should be used for testing purposes only
   void append(const std::vector<AllTypeVariant>& values);
+
+  // compresses a ValueColumn into a DictionaryColumn
+  void compress_chunk(ChunkID chunk_id);
 
  protected:
   ChunkOffset _target_chunk_size;
