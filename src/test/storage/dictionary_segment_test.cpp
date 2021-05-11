@@ -152,33 +152,32 @@ TEST_F(StorageDictionarySegmentTest, LowerUpperBoundAllTypeVariant) {
   EXPECT_EQ(dict_col->upper_bound(AllTypeVariant{15}), opossum::INVALID_VALUE_ID);
 }
 
-TEST_F(StorageDictionarySegmentTest, AttributeVector8) {
-  for (int i = 0; i < std::numeric_limits<std::uint8_t>::max() - 1; ++i) vc_int->append(i);
+TEST_F(StorageDictionarySegmentTest, AttributeVectorWidth) {
+  for (int i = 0; i < 10; ++i) vc_int->append(i);
   auto dict_col = _convert_to_dictionary_segment(vc_int, "int");
-
   EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint8_t));
 }
 
-TEST_F(StorageDictionarySegmentTest, AttributeVector16) {
-  // TODO(we): absolutely not performant
-  // for (int i = 0; i < std::numeric_limits<std::uint16_t>::max() - 1; ++i) vc_int->append(i);
-  // auto dict_col = _convert_to_dictionary_segment(vc_int, "int");
+TEST_F(StorageDictionarySegmentTest, AttributeVector8) {
+  auto attribute_vector = DictionarySegment<int>::attribute_vector_for_dictionary(1, 1);
+  EXPECT_EQ(attribute_vector->width(), sizeof(uint8_t));
+}
 
-  // EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint16_t));
+TEST_F(StorageDictionarySegmentTest, AttributeVector16) {
+  auto attribute_vector =
+      DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint8_t>::max(), 1);
+  EXPECT_EQ(attribute_vector->width(), sizeof(uint16_t));
 }
 
 TEST_F(StorageDictionarySegmentTest, AttributeVector32) {
-  // TODO(we): absolutely not performant
-  // for (uint i = 0; i < std::numeric_limits<std::uint32_t>::max() - 1; ++i) vc_int->append((int)i);
-  // auto dict_col = _convert_to_dictionary_segment(vc_int, "int");
-
-  // EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint32_t));
+  auto attribute_vector =
+      DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint16_t>::max(), 1);
+  EXPECT_EQ(attribute_vector->width(), sizeof(uint32_t));
 }
 
 TEST_F(StorageDictionarySegmentTest, AttributeVectorTooBig) {
-  // TODO(we): absolutely not performant
-  // for (int i = 0; i < std::numeric_limits<std::uint32_t>::max(); ++i) vc_int->append(i);
-  // EXPECT_THROW(_convert_to_dictionary_segment(vc_int, "int"), std::exception);
+  EXPECT_THROW(DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint32_t>::max(), 1),
+               std::exception);
 }
 
 TEST_F(StorageDictionarySegmentTest, MemoryUsage) {
@@ -195,6 +194,5 @@ TEST_F(StorageDictionarySegmentTest, MemoryUsage) {
   dict_col = _convert_to_dictionary_segment(vc_int, "int");
   EXPECT_EQ(dict_col->estimate_memory_usage(), size_t{12});
 }
-
 
 }  // namespace opossum

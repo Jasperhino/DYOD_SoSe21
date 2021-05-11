@@ -31,6 +31,5 @@ class BaseAttributeVector : private Noncopyable {
 
  protected:
   std::shared_mutex _mutex;
-
 };
 }  // namespace opossum

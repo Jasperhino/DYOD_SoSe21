@@ -40,7 +40,7 @@ class DictionarySegment : public BaseSegment {
       _dictionary_set.emplace(element);
     }
     _dictionary = std::make_shared<std::vector<T>>(_dictionary_set.begin(), _dictionary_set.end());
-    _attribute_vector = _attribute_vector_for_dictionary(unique_values_count(), base_segment->size());
+    _attribute_vector = attribute_vector_for_dictionary(unique_values_count(), base_segment->size());
 
     for (ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++) {
       AllTypeVariant element = (*base_segment)[index];
@@ -51,18 +51,6 @@ class DictionarySegment : public BaseSegment {
         ValueID dictionary_index = (ValueID)std::distance(_dictionary->begin(), result);
         _attribute_vector->set(index, dictionary_index);
       }
-    }
-  }
-
-  std::shared_ptr<BaseAttributeVector> _attribute_vector_for_dictionary(size_t dictionary_size, size_t attribute_count) {
-    if (dictionary_size < std::numeric_limits<std::uint8_t>::max()) {
-      return std::make_shared<FixedSizeAttributeVector<std::uint8_t>>(attribute_count);
-    } else if (dictionary_size < std::numeric_limits<std::uint16_t>::max()) {
-      return std::make_shared<FixedSizeAttributeVector<std::uint16_t>>(attribute_count);
-    } else if (dictionary_size < std::numeric_limits<std::uint32_t>::max()) {
-      return std::make_shared<FixedSizeAttributeVector<std::uint32_t>>(attribute_count);
-    } else {
-      throw std::length_error("Number of unique values of dictionary exceeds uint32_t");
     }
   }
 
@@ -133,6 +121,19 @@ class DictionarySegment : public BaseSegment {
     auto const dictionary_size = sizeof(T) * unique_values_count();
     return attribute_vector_size + dictionary_size;
   };
+
+  static std::shared_ptr<BaseAttributeVector> attribute_vector_for_dictionary(size_t dictionary_size,
+                                                                              size_t attribute_count) {
+    if (dictionary_size < std::numeric_limits<std::uint8_t>::max()) {
+      return std::make_shared<FixedSizeAttributeVector<std::uint8_t>>(attribute_count);
+    } else if (dictionary_size < std::numeric_limits<std::uint16_t>::max()) {
+      return std::make_shared<FixedSizeAttributeVector<std::uint16_t>>(attribute_count);
+    } else if (dictionary_size < std::numeric_limits<std::uint32_t>::max()) {
+      return std::make_shared<FixedSizeAttributeVector<std::uint32_t>>(attribute_count);
+    } else {
+      throw std::length_error("Number of unique values of dictionary exceeds uint32_t");
+    }
+  }
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;

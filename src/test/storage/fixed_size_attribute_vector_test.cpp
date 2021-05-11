@@ -14,13 +14,9 @@ class StorageFixedSizeAttributeVectorTest : public BaseTest {
   FixedSizeAttributeVector<uint8_t> uint8_attribute_vector{5};
 };
 
-TEST_F(StorageFixedSizeAttributeVectorTest, Size) {
-  EXPECT_EQ(uint8_attribute_vector.size(), 5u);
-}
+TEST_F(StorageFixedSizeAttributeVectorTest, Size) { EXPECT_EQ(uint8_attribute_vector.size(), 5u); }
 
-TEST_F(StorageFixedSizeAttributeVectorTest, Width) {
-  EXPECT_EQ(uint8_attribute_vector.width(), sizeof(uint8_t));
-}
+TEST_F(StorageFixedSizeAttributeVectorTest, Width) { EXPECT_EQ(uint8_attribute_vector.width(), sizeof(uint8_t)); }
 
 TEST_F(StorageFixedSizeAttributeVectorTest, SetAndGet) {
   uint8_attribute_vector.set(0, ValueID{0});
@@ -32,4 +28,4 @@ TEST_F(StorageFixedSizeAttributeVectorTest, SetAndGet) {
   EXPECT_THROW(uint8_attribute_vector.get(5), std::exception);
 }
 
-} // namespace opossum
+}  // namespace opossum

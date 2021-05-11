@@ -72,8 +72,8 @@ Chunk& Table::get_chunk(ChunkID chunk_id) { return *_chunks[chunk_id]; }
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *_chunks[chunk_id]; }
 
 void Table::compress_chunk(ChunkID chunk_id) {
-  auto &chunk_old = get_chunk(chunk_id);
-  //lock chunk before compressing (prevents appending to this chunk)
+  auto& chunk_old = get_chunk(chunk_id);
+  // lock chunk before compressing (prevents appending to this chunk)
   std::shared_lock lock(chunk_old.get_mutex());
 
   auto chunk_new = std::make_shared<Chunk>();
@@ -86,7 +86,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
     std::shared_ptr<BaseSegment> segment_empty;
     chunk_new->add_segment(segment_empty);
 
-    auto thread = std::thread([&, column_id](){
+    auto thread = std::thread([&, column_id]() {
       resolve_data_type(column_type(column_id), [&](auto type) {
         using Type = typename decltype(type)::type;
 
@@ -98,10 +98,9 @@ void Table::compress_chunk(ChunkID chunk_id) {
     threads.push_back(std::move(thread));
   }
 
-  for (auto &thread : threads) {
+  for (auto& thread : threads) {
     if (thread.joinable()) {
       thread.join();
-
     }
   }
 
