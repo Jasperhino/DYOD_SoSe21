@@ -121,8 +121,9 @@ class DictionarySegment : public BaseSegment {
 
   // returns the calculated memory usage
   size_t estimate_memory_usage() const final {
-    // TODO(WE)
-    return 0;
+    auto const attribute_vector_size = _attribute_vector->width() * size();
+    auto const dictionary_size = sizeof(T) * unique_values_count();
+    return attribute_vector_size + dictionary_size;
   };
 
  protected:

@@ -98,7 +98,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
 
     threads.push_back(std::move(th));
   }
-  for (auto thread : threads) thread->join();
+  for (const auto& thread : threads) thread->join();
 
   _chunks[chunk_id] = chunk_new;
 }

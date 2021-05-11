@@ -1,6 +1,5 @@
 #include "fixed_size_attribute_vector.hpp"
 
-#include <math.h>
 #include <vector>
 #include "type_cast.hpp"
 #include "types.hpp"
@@ -24,8 +23,7 @@ size_t FixedSizeAttributeVector<T>::size() const {
 
 template <typename T>
 AttributeVectorWidth FixedSizeAttributeVector<T>::width() const {
-  // TODO(rethink, understand method!)
-  return ceil((log2(size() - 1) + 1) / 8);
+  return sizeof(T);
 }
 
 template <typename T>
