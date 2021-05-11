@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -72,6 +73,13 @@ class Table : private Noncopyable {
   void append(const std::vector<AllTypeVariant>& values);
 
  protected:
-  // Implementation goes here
+  ChunkOffset _target_chunk_size;
+  std::vector<std::shared_ptr<Chunk>> _chunks;
+  std::vector<std::string> _column_names;
+  std::vector<std::string> _column_types;
+  std::unordered_map<std::string, ColumnID> _name_id_mapping;
+
+ private:
+  void _add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
 };
 }  // namespace opossum
