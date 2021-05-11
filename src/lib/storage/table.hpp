@@ -84,7 +84,5 @@ class Table : private Noncopyable {
 
  private:
   static void _add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
-  // compress a single segment of the chunk
-  void _compress_segment_worker(ChunkID chunk_id, ColumnID column_id, std::shared_ptr<Chunk> chunk_new);
 };
 }  // namespace opossum

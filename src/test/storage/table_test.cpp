@@ -79,12 +79,12 @@ TEST_F(StorageTableTest, CompressChunk) {
   t.append({3, "!"});
 
   EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(), 8);
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{1})->estimate_memory_usage(), 64);
 
   t.compress_chunk(ChunkID{0});
   EXPECT_EQ(t.chunk_count(), 2u);
-
-  //const Chunk& compressed_chunk = t.get_chunk(ChunkID{0});
   EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(), 10);
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{1})->estimate_memory_usage(), 66);
 }
 
 }  // namespace opossum

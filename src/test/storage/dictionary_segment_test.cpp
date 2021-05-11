@@ -101,7 +101,7 @@ TEST_F(StorageDictionarySegmentTest, AppendValues) {
   EXPECT_EQ(dict_col->size(), 1u);
 
   // Test that appending to a dictionary segment does not add values
-  vc_int->append(2);
+  dict_col->append(2);
   EXPECT_EQ(dict_col->size(), 1u);
 }
 
