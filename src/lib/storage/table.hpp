@@ -82,6 +82,6 @@ class Table : private Noncopyable {
   std::unordered_map<std::string, ColumnID> _name_id_mapping;
 
  private:
-  static void _add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
+  void _add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
 };
 }  // namespace opossum
