@@ -13,7 +13,7 @@ FixedSizeAttributeVector<T>::FixedSizeAttributeVector(const size_t size) {
 
 template <typename T>
 ValueID FixedSizeAttributeVector<T>::get(const size_t i) const {
-  return (ValueID)_attribute_vector.at(i);
+  return static_cast<ValueID>(_attribute_vector.at(i));
 }
 
 template <typename T>
@@ -28,7 +28,7 @@ AttributeVectorWidth FixedSizeAttributeVector<T>::width() const {
 
 template <typename T>
 void FixedSizeAttributeVector<T>::set(const size_t i, const ValueID value_id) {
-  DebugAssert(i < size(), "Position out of range");
+  DebugAssert(i < size(), "Index out of range, attribute vector size is " + std::to_string(size()));
   _attribute_vector[i] = value_id;
 }
 

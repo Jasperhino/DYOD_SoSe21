@@ -22,7 +22,7 @@ class FixedSizeAttributeVector : public BaseAttributeVector {
   AttributeVectorWidth width() const final;
 
  protected:
-  std::vector<uintX_t> _attribute_vector = {};
+  std::vector<uintX_t> _attribute_vector;
 };
 
 }  // namespace opossum

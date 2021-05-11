@@ -62,7 +62,7 @@ class DictionarySegment : public BaseSegment {
 
   // return the value at a certain position.
   T get(const size_t chunk_offset) const {
-    DebugAssert(chunk_offset < size(), "chunk_offset bigger than attribute vector size");
+    DebugAssert(chunk_offset < size(), "Chunk offset out of range, attribute vector size is " + std::to_string(size()));
     return value_by_value_id(_attribute_vector->get(chunk_offset));
   }
 
@@ -77,7 +77,8 @@ class DictionarySegment : public BaseSegment {
 
   // return the value represented by a given ValueID
   const T& value_by_value_id(ValueID value_id) const {
-    DebugAssert(value_id < unique_values_count(), "value_id bigger than dictionary size");
+    DebugAssert(value_id < unique_values_count(),
+                "ValueID out of range, dictionary size is " + std::to_string(unique_values_count()));
     return (*_dictionary)[value_id];
   }
 
