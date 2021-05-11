@@ -68,10 +68,13 @@ class DictionarySegment : public BaseSegment {
   // the DictionarySegment in this file. Replace the method signatures with actual implementations.
 
   // return the value at a certain position. If you want to write efficient operators, back off!
-  AllTypeVariant operator[](const ChunkOffset chunk_offset) const override { return (*_dictionary)[0]; };
+  AllTypeVariant operator[](const ChunkOffset chunk_offset) const override { return get(chunk_offset); }
 
   // return the value at a certain position.
-  T get(const size_t chunk_offset) const;
+  T get(const size_t chunk_offset) const {
+    DebugAssert(chunk_offset < size(), "chunk_offset bigger than attribute vector size");
+    return value_by_value_id(_attribute_vector->get(chunk_offset));
+  }
 
   // dictionary segments are immutable
   void append(const AllTypeVariant& val) override{};
@@ -80,10 +83,13 @@ class DictionarySegment : public BaseSegment {
   std::shared_ptr<const std::vector<T>> dictionary() const { return _dictionary; }
 
   // returns an underlying data structure
-  std::shared_ptr<const BaseAttributeVector> attribute_vector() const;
+  std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
 
   // return the value represented by a given ValueID
-  const T& value_by_value_id(ValueID value_id) const;
+  const T& value_by_value_id(ValueID value_id) const {
+    DebugAssert(value_id < unique_values_count(), "value_id bigger than dictionary size");
+    return (*_dictionary)[value_id];
+  }
 
   // returns the first value ID that refers to a value >= the search value
   // returns INVALID_VALUE_ID if all values are smaller than the search value
