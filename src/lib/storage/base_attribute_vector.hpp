@@ -1,5 +1,6 @@
 #pragma once
 
+#include <shared_mutex>
 #include "types.hpp"
 
 namespace opossum {
@@ -27,5 +28,9 @@ class BaseAttributeVector : private Noncopyable {
 
   // returns the width of biggest value id in bytes
   virtual AttributeVectorWidth width() const = 0;
+
+ protected:
+  std::shared_mutex _mutex;
+
 };
 }  // namespace opossum

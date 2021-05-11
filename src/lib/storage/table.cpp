@@ -71,34 +71,39 @@ Chunk& Table::get_chunk(ChunkID chunk_id) { return *_chunks[chunk_id]; }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *_chunks[chunk_id]; }
 
-void Table::_compress_segment(ChunkID chunk_id, ColumnID column_id, std::shared_ptr<BaseSegment> segment_new) {
-  const Chunk& chunk_old = get_chunk(chunk_id);
-  auto segment_old = chunk_old.get_segment(column_id);
+void Table::_compress_segment_worker(ChunkID chunk_id, ColumnID column_id, std::shared_ptr<Chunk> chunk_new) {
+    resolve_data_type(column_type(column_id), [&](auto type) {
+      using Type = typename decltype(type)::type;
 
-  resolve_data_type(column_type(column_id), [&](auto type) {
-    using Type = typename decltype(type)::type;
-    segment_new = std::make_shared<DictionarySegment<Type>>(segment_old);
-  });
+      const Chunk& chunk = get_chunk(chunk_id);
+      auto segment_old = chunk.get_segment(column_id);
+      auto segment_new = std::make_shared<DictionarySegment<Type>>(segment_old);
+      chunk_new->add_segment(segment_new);
+    });
 }
 
 void Table::compress_chunk(ChunkID chunk_id) {
-  // TODO(we): mutex on old chunk while compressing
+  auto &chunk_old = get_chunk(chunk_id);
+  //lock chunk before compressing (prevents appending to this chunk)
+  std::shared_lock lock(chunk_old.get_mutex());
 
-  const Chunk& chunk_old = get_chunk(chunk_id);
   auto chunk_new = std::make_shared<Chunk>();
 
-  std::vector<std::shared_ptr<std::thread>> threads;
+  std::vector<std::thread> threads;
+  ColumnCount segment_count = chunk_old.column_count();
+  threads.reserve(segment_count);
 
-  size_t segment_count = chunk_old.column_count();
   for (ColumnID column_id{0}; column_id < segment_count; ++column_id) {
-    std::shared_ptr<BaseSegment> segment_new;
-    chunk_new->add_segment(segment_new);
-    auto th = std::make_shared<std::thread>(
-        [this, chunk_id, column_id, segment_new]() { this->_compress_segment(chunk_id, column_id, segment_new); });
-
-    threads.push_back(std::move(th));
+    auto thread = std::thread(&Table::_compress_segment_worker, this, chunk_id, column_id, chunk_new);
+    threads.push_back(std::move(thread));
   }
-  for (const auto& thread : threads) thread->join();
+
+  for (auto &thread : threads) {
+    if (thread.joinable()) {
+      thread.join();
+
+    }
+  }
 
   _chunks[chunk_id] = chunk_new;
 }

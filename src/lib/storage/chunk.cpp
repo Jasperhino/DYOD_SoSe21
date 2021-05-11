@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base_segment.hpp"
+#include "dictionary_segment.hpp"
 #include "chunk.hpp"
 
 #include "utils/assert.hpp"
@@ -18,6 +19,7 @@ void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) { _segments.push_b
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
   DebugAssert(values.size() == _segments.size(), "value vector has wrong size");
+  std::shared_lock lock(_mutex);
   for (std::vector<AllTypeVariant>::size_type i = 0, size = values.size(); i < size; ++i) {
     _segments[i]->append(values[i]);
   }

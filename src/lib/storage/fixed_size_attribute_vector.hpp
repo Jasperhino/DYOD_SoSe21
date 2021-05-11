@@ -6,7 +6,7 @@
 
 namespace opossum {
 
-template <typename T>
+template <typename uintX_t>
 class FixedSizeAttributeVector : public BaseAttributeVector {
  public:
   explicit FixedSizeAttributeVector(const size_t size);
@@ -22,7 +22,7 @@ class FixedSizeAttributeVector : public BaseAttributeVector {
   AttributeVectorWidth width() const final;
 
  protected:
-  std::vector<T> _attribute_vector = {};
+  std::vector<uintX_t> _attribute_vector = {};
 };
 
 }  // namespace opossum

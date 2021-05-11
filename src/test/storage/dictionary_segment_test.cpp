@@ -196,4 +196,5 @@ TEST_F(StorageDictionarySegmentTest, MemoryUsage) {
   EXPECT_EQ(dict_col->estimate_memory_usage(), size_t{12});
 }
 
+
 }  // namespace opossum
