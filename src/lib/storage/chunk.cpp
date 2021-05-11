@@ -14,18 +14,24 @@
 
 namespace opossum {
 
-void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) { _segments.push_back(segment); }
+void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
+  DebugAssert(column_count() == 0 || segment->size() == size(),
+              "Segment has wrong size. Should be " + std::to_string(size()));
+  _segments.push_back(segment);
+}
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
-  DebugAssert(values.size() == _segments.size(), "value vector has wrong size");
-  for (std::vector<AllTypeVariant>::size_type i = 0, size = values.size(); i < size; ++i) {
-    _segments[i]->append(values[i]);
+  DebugAssert(values.size() == column_count(),
+              "Value vector has wrong size. Should be " + std::to_string(column_count()));
+  for (std::vector<AllTypeVariant>::size_type column_index = 0, size = values.size(); column_index < size;
+       ++column_index) {
+    _segments[column_index]->append(values[column_index]);
   }
 }
 
-std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const { return _segments[column_id]; }
+std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const { return _segments.at(column_id); }
 
-ColumnCount Chunk::column_count() const { return (ColumnCount)_segments.size(); }
+ColumnCount Chunk::column_count() const { return static_cast<ColumnCount>(_segments.size()); }
 
 ChunkOffset Chunk::size() const {
   if (!_segments.empty()) {

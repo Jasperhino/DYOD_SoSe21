@@ -15,10 +15,13 @@ StorageManager& StorageManager::get() {
   return instance;
 }
 
-void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) { _tables[name] = table; }
+void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) {
+  Assert(!has_table(name), "Table " + name + " exists already.");
+  _tables[name] = table;
+}
 
 void StorageManager::drop_table(const std::string& name) {
-  DebugAssert(has_table(name), "cannot drop non-existing table");
+  Assert(has_table(name), "Cannot drop non-existing table " + name);
   _tables.erase(name);
 }
 
@@ -34,11 +37,11 @@ std::vector<std::string> StorageManager::table_names() const {
 
 void StorageManager::print(std::ostream& out) const {
   for (auto const& [table_name, table] : _tables) {
-    out << table_name << ", " << table->column_count() << ", " << table->row_count() << ", " << table->chunk_count()
-        << std::endl;
+    out << "Table: " << table_name << ", Column Count: " << table->column_count()
+        << ", Row Count: " << table->row_count() << ", Chunk Count: " << table->chunk_count() << std::endl;
   }
 }
 
-void StorageManager::reset() { _tables.clear(); }
+void StorageManager::reset() { get() = StorageManager{}; }
 
 }  // namespace opossum

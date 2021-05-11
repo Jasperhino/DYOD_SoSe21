@@ -35,6 +35,11 @@ TEST_F(StorageChunkTest, AddSegmentToChunk) {
   c.add_segment(string_value_segment);
   EXPECT_EQ(c.size(), 3u);
   EXPECT_EQ(c.column_count(), 2u);
+
+  auto invalid_value_segment = std::make_shared<ValueSegment<std::string>>();
+  invalid_value_segment->append("Hello,");
+  invalid_value_segment->append("world");
+  EXPECT_THROW(c.add_segment(invalid_value_segment), std::exception);
 }
 
 TEST_F(StorageChunkTest, AddValuesToChunk) {
@@ -57,6 +62,11 @@ TEST_F(StorageChunkTest, RetrieveSegment) {
 
   auto base_segment = c.get_segment(ColumnID{0});
   EXPECT_EQ(base_segment->size(), 4u);
+
+  EXPECT_EQ((*base_segment)[0], AllTypeVariant{4});
+  EXPECT_EQ((*base_segment)[1], AllTypeVariant{6});
+  EXPECT_EQ((*base_segment)[2], AllTypeVariant{3});
+  EXPECT_EQ((*base_segment)[3], AllTypeVariant{2});
 }
 
 }  // namespace opossum

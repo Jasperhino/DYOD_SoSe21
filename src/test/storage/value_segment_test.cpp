@@ -47,6 +47,11 @@ TEST_F(StorageValueSegmentTest, GetValues) {
   EXPECT_EQ(type_cast<double>(double_value_segment[ChunkOffset{0}]), 3.14);
 }
 
+TEST_F(StorageValueSegmentTest, GetValuesException) {
+  int_value_segment.append(3);
+  EXPECT_THROW(int_value_segment[ChunkOffset{2}], std::exception);
+}
+
 TEST_F(StorageValueSegmentTest, AddValueOfDifferentType) {
   int_value_segment.append(3.14);
   EXPECT_EQ(int_value_segment.size(), 1u);

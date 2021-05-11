@@ -73,11 +73,11 @@ class Table : private Noncopyable {
   void append(const std::vector<AllTypeVariant>& values);
 
  protected:
-  ChunkOffset _chunk_size;
-  std::vector<std::shared_ptr<Chunk>> _chunks = {};
+  ChunkOffset _target_chunk_size;
+  std::vector<std::shared_ptr<Chunk>> _chunks;
   std::vector<std::string> _column_names;
   std::vector<std::string> _column_types;
-  std::unordered_map<std::string, ColumnID> _name_id_mapping{};
+  std::unordered_map<std::string, ColumnID> _name_id_mapping;
 
  private:
   void _add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
