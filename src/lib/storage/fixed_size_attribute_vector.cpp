@@ -1,8 +1,9 @@
 #include "fixed_size_attribute_vector.hpp"
 
+#include <math.h>
+#include <vector>
 #include "type_cast.hpp"
 #include "types.hpp"
-#include <math.h>
 
 namespace opossum {
 
@@ -13,7 +14,7 @@ FixedSizeAttributeVector<T>::FixedSizeAttributeVector(const size_t size) {
 
 template <typename T>
 ValueID FixedSizeAttributeVector<T>::get(const size_t i) const {
-  return (ValueID) _attribute_vector.at(i);
+  return (ValueID)_attribute_vector.at(i);
 }
 
 template <typename T>
@@ -24,7 +25,7 @@ size_t FixedSizeAttributeVector<T>::size() const {
 template <typename T>
 AttributeVectorWidth FixedSizeAttributeVector<T>::width() const {
   // TODO(rethink, understand method!)
-  return ceil ((log2 (size() - 1) + 1) / 8);
+  return ceil((log2(size() - 1) + 1) / 8);
 }
 
 template <typename T>
@@ -33,9 +34,8 @@ void FixedSizeAttributeVector<T>::set(const size_t i, const ValueID value_id) {
   _attribute_vector[i] = value_id;
 }
 
-// clang-format off
-#define data_types_macro_2                              (uint32_t) (uint16_t) (uint8_t)
-// clang-format on
-BOOST_PP_SEQ_FOR_EACH(EXPLICIT_INSTANTIATION, FixedSizeAttributeVector, data_types_macro_2)
+template class FixedSizeAttributeVector<uint8_t>;
+template class FixedSizeAttributeVector<uint16_t>;
+template class FixedSizeAttributeVector<uint32_t>;
 
 }  // namespace opossum

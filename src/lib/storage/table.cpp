@@ -6,9 +6,9 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
-#include <thread>
 
 #include "dictionary_segment.hpp"
 #include "value_segment.hpp"
@@ -71,7 +71,7 @@ Chunk& Table::get_chunk(ChunkID chunk_id) { return *_chunks[chunk_id]; }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *_chunks[chunk_id]; }
 
-static void Table::_compress_segment(ChunkID chunk_id, ColumnID column_id, std::shared_ptr<BaseSegment> segment_new) {
+void Table::_compress_segment(ChunkID chunk_id, ColumnID column_id, std::shared_ptr<BaseSegment> segment_new) {
   const Chunk& chunk_old = get_chunk(chunk_id);
   auto segment_old = chunk_old.get_segment(column_id);
 
@@ -81,23 +81,24 @@ static void Table::_compress_segment(ChunkID chunk_id, ColumnID column_id, std::
   });
 }
 
-
 void Table::compress_chunk(ChunkID chunk_id) {
   // TODO(we): mutex on old chunk while compressing
 
   const Chunk& chunk_old = get_chunk(chunk_id);
   auto chunk_new = std::make_shared<Chunk>();
 
-  std::vector<std::thread> threads;
+  std::vector<std::shared_ptr<std::thread>> threads;
 
-  for (size_t column_id = 0, segment_count = chunk_old.column_count(); column_id < segment_count; ++column_id) {
+  size_t segment_count = chunk_old.column_count();
+  for (ColumnID column_id{0}; column_id < segment_count; ++column_id) {
     std::shared_ptr<BaseSegment> segment_new;
     chunk_new->add_segment(segment_new);
-    std::thread *segment_thread = new std::thread(_compress_segment, chunk_id, column_id, segment_new);
-    threads.emplace_back(segment_thread);
+    auto th = std::make_shared<std::thread>(
+        [this, chunk_id, column_id, segment_new]() { this->_compress_segment(chunk_id, column_id, segment_new); });
+
+    threads.push_back(std::move(th));
   }
-  for (auto& thread : threads)
-    thread.join();
+  for (auto thread : threads) thread->join();
 
   _chunks[chunk_id] = chunk_new;
 }

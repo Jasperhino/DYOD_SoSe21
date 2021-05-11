@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "base_attribute_vector.hpp"
 #include "utils/assert.hpp"
 
@@ -8,7 +9,7 @@ namespace opossum {
 template <typename T>
 class FixedSizeAttributeVector : public BaseAttributeVector {
  public:
-  FixedSizeAttributeVector(const size_t size);
+  explicit FixedSizeAttributeVector(const size_t size);
 
   ~FixedSizeAttributeVector() = default;
 

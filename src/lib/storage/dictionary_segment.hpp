@@ -1,18 +1,18 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <cstdint>
 
 #include "all_type_variant.hpp"
 #include "base_attribute_vector.hpp"
-#include "fixed_size_attribute_vector.hpp"
 #include "base_segment.hpp"
+#include "fixed_size_attribute_vector.hpp"
 #include "type_cast.hpp"
 #include "types.hpp"
 
@@ -42,12 +42,14 @@ class DictionarySegment : public BaseSegment {
     _dictionary = std::make_shared<std::vector<T>>(_dictionary_set.begin(), _dictionary_set.end());
 
     const size_t dictionary_size = unique_values_count();
-    if(dictionary_size < 256){
+    if (dictionary_size < std::numeric_limits<std::uint8_t>::max()) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint8_t>>(base_segment->size());
-    } else if(dictionary_size < 65536){
+    } else if (dictionary_size < std::numeric_limits<std::uint16_t>::max()) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint16_t>>(base_segment->size());
-    } else {
+    } else if (dictionary_size < std::numeric_limits<std::uint32_t>::max()) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<std::uint32_t>>(base_segment->size());
+    } else {
+      throw std::length_error("Number of unique values of dictionary exceeds uint32_t");
     }
 
     for (ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++) {
@@ -75,7 +77,7 @@ class DictionarySegment : public BaseSegment {
   void append(const AllTypeVariant& val) override{};
 
   // returns an underlying dictionary
-  std::shared_ptr<const std::vector<T>> dictionary() const { return _dictionary; };
+  std::shared_ptr<const std::vector<T>> dictionary() const { return _dictionary; }
 
   // returns an underlying data structure
   std::shared_ptr<const BaseAttributeVector> attribute_vector() const;
@@ -92,10 +94,10 @@ class DictionarySegment : public BaseSegment {
     } else {
       return INVALID_VALUE_ID;
     }
-  };
+  }
 
   // same as lower_bound(T), but accepts an AllTypeVariant
-  ValueID lower_bound(const AllTypeVariant& value) const { return lower_bound(type_cast<T>(value)); };
+  ValueID lower_bound(const AllTypeVariant& value) const { return lower_bound(type_cast<T>(value)); }
 
   // returns the first value ID that refers to a value > the search value
   // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
@@ -106,13 +108,13 @@ class DictionarySegment : public BaseSegment {
     } else {
       return INVALID_VALUE_ID;
     }
-  };
+  }
 
   // same as upper_bound(T), but accepts an AllTypeVariant
-  ValueID upper_bound(const AllTypeVariant& value) const { return upper_bound(type_cast<T>(value)); };
+  ValueID upper_bound(const AllTypeVariant& value) const { return upper_bound(type_cast<T>(value)); }
 
   // return the number of unique_values (dictionary entries)
-  size_t unique_values_count() const { return _dictionary->size(); };
+  size_t unique_values_count() const { return _dictionary->size(); }
 
   // return the number of entries
   ChunkOffset size() const override { return _attribute_vector->size(); };
