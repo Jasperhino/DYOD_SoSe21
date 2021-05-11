@@ -33,20 +33,20 @@ class DictionarySegment : public BaseSegment {
    * Creates a Dictionary segment from a given value segment.
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
+    // collect all unique values of base_segment
     std::set<T> _dictionary_set;
-
     for (ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++) {
       T element = type_cast<T>((*base_segment)[index]);
       _dictionary_set.emplace(element);
     }
+    // create dictionary and attribute vector based on the found unique values
     _dictionary = std::make_shared<std::vector<T>>(_dictionary_set.begin(), _dictionary_set.end());
     _attribute_vector = attribute_vector_for_dictionary(unique_values_count(), base_segment->size());
-
+    // fill the attribute vector
     for (ChunkOffset index = 0, base_segment_size = base_segment->size(); index < base_segment_size; index++) {
       AllTypeVariant element = (*base_segment)[index];
-
+      // search for ValueID of value in dictionary
       auto result = std::find(_dictionary->begin(), _dictionary->end(), type_cast<T>(element));
-
       if (result != _dictionary->end()) {
         ValueID dictionary_index = (ValueID)std::distance(_dictionary->begin(), result);
         _attribute_vector->set(index, dictionary_index);
