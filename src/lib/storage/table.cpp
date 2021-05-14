@@ -32,6 +32,10 @@ void Table::_add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::stri
   });
 }
 
+void Table::add_column_definition(const std::string& name, const std::string& type) {
+  // Implementation goes here
+}
+
 void Table::add_column(const std::string& name, const std::string& type) {
   Assert(!row_count(), "add_column must be called before adding entries");
   _column_names.push_back(name);
@@ -50,6 +54,10 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
     _chunks.push_back(chunk);
   }
   _chunks.back()->append(values);
+}
+
+void Table::create_new_chunk() {
+  // Implementation goes here
 }
 
 ColumnCount Table::column_count() const { return static_cast<ColumnCount>(_column_names.size()); }

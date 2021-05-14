@@ -3,6 +3,14 @@ set(
     SOURCES
     all_type_variant.hpp
     resolve_type.hpp
+    operators/abstract_operator.cpp
+    operators/abstract_operator.hpp
+    operators/get_table.hpp
+    operators/print.cpp
+    operators/print.hpp
+    operators/table_scan.hpp
+    operators/table_wrapper.cpp
+    operators/table_wrapper.hpp
     storage/base_attribute_vector.hpp
     storage/fixed_size_attribute_vector.cpp
     storage/fixed_size_attribute_vector.hpp
@@ -10,6 +18,7 @@ set(
     storage/chunk.cpp
     storage/chunk.hpp
     storage/dictionary_segment.hpp
+    storage/reference_segment.hpp
     storage/storage_manager.cpp
     storage/storage_manager.hpp
     storage/table.cpp
