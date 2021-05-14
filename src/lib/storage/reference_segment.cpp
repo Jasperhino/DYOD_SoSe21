@@ -1,7 +1,5 @@
 #include "reference_segment.hpp"
 
-#include <vector>
-
 namespace opossum {
 
 ReferenceSegment::ReferenceSegment(const std::shared_ptr<const Table>& referenced_table,
@@ -25,6 +23,9 @@ const std::shared_ptr<const Table>& ReferenceSegment::referenced_table() const {
 
 ColumnID ReferenceSegment::referenced_column_id() const { return _referenced_column_id; }
 
-size_t ReferenceSegment::estimate_memory_usage() const { return 0; }
+size_t ReferenceSegment::estimate_memory_usage() const {
+  // TODO(we): Implement
+  return 0;
+}
 
 }  // namespace opossum
