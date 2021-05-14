@@ -7,6 +7,7 @@
 
 #include "abstract_operator.hpp"
 #include "all_type_variant.hpp"
+#include "storage/table.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
 
@@ -26,6 +27,18 @@ class TableScan : public AbstractOperator {
 
  protected:
   std::shared_ptr<const Table> _on_execute() override;
+
+  ColumnID _column_id;
+  ScanType _scan_type;
+  const AllTypeVariant _search_value;
+
+ private:
+  static bool _scan_type_equals(AllTypeVariant&, const AllTypeVariant&);
+  //static bool _scan_type_not_equals(AllTypeVariant&, AllTypeVariant&);
+  static bool _scan_type_less_than(AllTypeVariant&, const AllTypeVariant&);
+  //static bool _scan_type_less_than_equals(AllTypeVariant&, AllTypeVariant&);
+  static bool _scan_type_greater_than(AllTypeVariant&, const AllTypeVariant&);
+  //static bool _scan_type_greater_than_equals(AllTypeVariant&, AllTypeVariant&);
 };
 
 }  // namespace opossum
