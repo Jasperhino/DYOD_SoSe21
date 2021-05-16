@@ -41,6 +41,18 @@ std::function<bool(T&)> _make_scan_type_lambda(T search_value, const ScanType sc
 }
 
 template <typename T>
+void _scan_reference_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id, std::shared_ptr<ReferenceSegment> segment, std::function<bool(T&)> scan_type_lambda) {
+  //TODO(we): I think the performance is critical because currently we access every referenced value...
+  const auto referenced_pos_list = segment->pos_list();
+  for(size_t reference_index = 0, segment_size = segment->size(); reference_index < segment_size; ++reference_index) {
+    T value = type_cast<T>((*segment)[reference_index]);
+    if(scan_type_lambda(value)) {
+      position_list->push_back((*referenced_pos_list)[reference_index]);
+    }
+  }
+}
+
+template <typename T>
 void _scan_value_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id, std::shared_ptr<ValueSegment<T>> typed_segment, std::function<bool(T&)> scan_type_lambda) {
   auto values = typed_segment->values();
   auto iter = values.begin();
@@ -91,6 +103,7 @@ void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, Chun
 
 std::shared_ptr<const Table> TableScan::_on_execute() {
   auto in = _left_input_table();
+  if(in->row_count() == 0) return in;
 
   std::shared_ptr<Table> out = std::make_shared<Table>();
   for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(in->column_count()); column_id < column_count;
@@ -122,6 +135,12 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
         const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
         if(typed_dictionary_segment != nullptr) {
           _scan_dictionary_segment<Type>(position_list, chunk_id, typed_dictionary_segment, _scan_type, search_value);
+        } else {
+          const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment);
+          if(reference_segment != nullptr) {
+            _scan_reference_segment<Type>(position_list, chunk_id, reference_segment, scan_type_lambda);
+          }
+
         }
       }
 
