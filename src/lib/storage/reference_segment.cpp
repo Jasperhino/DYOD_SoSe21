@@ -15,7 +15,7 @@ AllTypeVariant ReferenceSegment::operator[](const ChunkOffset chunk_offset) cons
                .get_segment(_referenced_column_id))[row_position.chunk_offset];
 }
 
-ChunkOffset ReferenceSegment::size() const { return _referenced_table->row_count(); }
+ChunkOffset ReferenceSegment::size() const { return _pos->size(); }
 
 const std::shared_ptr<const PosList>& ReferenceSegment::pos_list() const { return _pos; }
 

@@ -31,14 +31,6 @@ class TableScan : public AbstractOperator {
   ColumnID _column_id;
   ScanType _scan_type;
   const AllTypeVariant _search_value;
-
- private:
-  static bool _scan_type_equals(AllTypeVariant&, const AllTypeVariant&);
-  //static bool _scan_type_not_equals(AllTypeVariant&, AllTypeVariant&);
-  static bool _scan_type_less_than(AllTypeVariant&, const AllTypeVariant&);
-  //static bool _scan_type_less_than_equals(AllTypeVariant&, AllTypeVariant&);
-  static bool _scan_type_greater_than(AllTypeVariant&, const AllTypeVariant&);
-  //static bool _scan_type_greater_than_equals(AllTypeVariant&, AllTypeVariant&);
 };
 
 }  // namespace opossum

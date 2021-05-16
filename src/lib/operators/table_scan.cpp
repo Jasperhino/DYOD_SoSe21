@@ -21,39 +21,26 @@ ScanType TableScan::scan_type() const { return _scan_type; }
 
 const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 
-static inline bool _scan_type_equals(AllTypeVariant& compare, const AllTypeVariant& search_value) {
-  return compare == search_value;
-}
-
-static inline bool _scan_type_less_than(AllTypeVariant& compare, const AllTypeVariant& search_value) {
-  return compare < search_value;
-}
-
-static inline bool _scan_type_greater_than(AllTypeVariant& compare, const AllTypeVariant& search_value) {
-  return compare > search_value;
+template <typename T>
+std::function<bool(T&)> _make_scan_type_lambda(T search_value, const ScanType scan_type) {
+  switch(scan_type){
+    case ScanType::OpEquals:
+      return [search_value](T& v) { return v == search_value; };
+    case ScanType::OpNotEquals:
+      return [search_value](T& v) { return v != search_value; };
+    case ScanType::OpLessThan:
+      return [search_value](T& v) { return v < search_value; };
+    case ScanType::OpLessThanEquals:
+      return [search_value](T& v) { return v <= search_value; };
+    case ScanType::OpGreaterThan:
+      return [search_value](T& v) { return v > search_value; };
+    case ScanType::OpGreaterThanEquals:
+      return [search_value](T& v) { return v >= search_value; };
+  }
+  return nullptr;
 }
 
 std::shared_ptr<const Table> TableScan::_on_execute() {
-  /*using ScanTypeFunction = bool (*)(AllTypeVariant&, const AllTypeVariant&);
-  ScanTypeFunction scan_type_function;
-  switch(_scan_type){
-    case ScanType::OpEquals:
-      scan_type_function = &_scan_type_equals;
-      break;
-    case ScanType::OpNotEquals:
-      break;
-    case ScanType::OpLessThan:
-      scan_type_function = &_scan_type_less_than;
-      break;
-    case ScanType::OpLessThanEquals:
-      break;
-    case ScanType::OpGreaterThan:
-      scan_type_function = &_scan_type_greater_than;
-      break;
-    case ScanType::OpGreaterThanEquals:
-      break;
-  };*/
-
   auto in = _left_input_table();
 
   std::shared_ptr<Table> out = std::make_shared<Table>();
@@ -66,21 +53,26 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
   DebugAssert(column_type == boost::core::demangled_name(_search_value.type()),
               "Incompatible data types for column and search value");
 
-  for (auto chunk_id = ChunkID{0}, chunk_count = in->chunk_count(); chunk_id < chunk_count; ++chunk_id) {
-    auto segment = in->get_chunk(chunk_id).get_segment(_column_id);
-    auto new_chunk = std::make_shared<Chunk>();
 
-    resolve_data_type(column_type, [&](auto type) {
-      using Type = typename decltype(type)::type;
+  resolve_data_type(column_type, [&](auto type) {
+    using Type = typename decltype(type)::type;
+
+    Type search_value = type_cast<Type>(_search_value);
+
+    auto scan_type_lambda = _make_scan_type_lambda(search_value, _scan_type);
+
+
+    for (auto chunk_id = ChunkID{0}, chunk_count = in->chunk_count(); chunk_id < chunk_count; ++chunk_id) {
+      auto segment = in->get_chunk(chunk_id).get_segment(_column_id);
+      auto new_chunk = std::make_shared<Chunk>();
+
       const auto typed_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
-
-      Type search_value = type_cast<Type>(_search_value);
 
       auto position_list = std::make_shared<PosList>();
       auto values = typed_segment->values();
       auto iter = values.begin();
 
-      while ((iter = std::find_if(iter, values.end(), [&](Type& v) { return v >= search_value; })) != values.end()) {
+      while ((iter = std::find_if(iter, values.end(), scan_type_lambda)) != values.end()) {
         auto position = std::distance(values.begin(), iter);
         position_list->emplace_back(RowID{chunk_id, static_cast<ChunkOffset>(position)});
         iter++;
@@ -91,10 +83,10 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
         auto reference_segment = std::make_shared<ReferenceSegment>(in, column_id, position_list);
         new_chunk->add_segment(reference_segment);
       }
-    });
 
-    out->emplace_chunk(new_chunk);
-  }
+      out->emplace_chunk(new_chunk);
+    }
+  });
 
   return out;
 }
