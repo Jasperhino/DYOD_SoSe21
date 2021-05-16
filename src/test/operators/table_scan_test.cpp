@@ -129,24 +129,25 @@ TEST_F(OperatorsTableScanTest, SingleScanReturnsCorrectRowCount) {
 
   EXPECT_TABLE_EQ(scan->get_output(), expected_result);
 }
-//
-// TEST_F(OperatorsTableScanTest, ScanOnDictColumn) {
-//   // we do not need to check for a non existing value, because that happens automatically when we scan the second chunk
-//
-//   std::map<ScanType, std::vector<AllTypeVariant>> tests;
-//   tests[ScanType::OpEquals] = {104};
-//   tests[ScanType::OpNotEquals] = {100, 102, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
-//   tests[ScanType::OpLessThan] = {100, 102};
-//   tests[ScanType::OpLessThanEquals] = {100, 102, 104};
-//   tests[ScanType::OpGreaterThan] = {106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
-//   tests[ScanType::OpGreaterThanEquals] = {104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
-//   for (const auto& test : tests) {
-//     auto scan = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 4);
-//     scan->execute();
-//
-//     ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);
-//   }
-// }
+
+ TEST_F(OperatorsTableScanTest, ScanOnDictColumn) {
+   // we do not need to check for a non existing value, because that happens automatically when we scan the second chunk
+
+   std::map<ScanType, std::vector<AllTypeVariant>> tests;
+   tests[ScanType::OpEquals] = {104};
+   tests[ScanType::OpNotEquals] = {100, 102, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+   //TODO(we): uncomment
+   //tests[ScanType::OpLessThan] = {100, 102};
+   //tests[ScanType::OpLessThanEquals] = {100, 102, 104};
+   //tests[ScanType::OpGreaterThan] = {106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+   tests[ScanType::OpGreaterThanEquals] = {104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+   for (const auto& test : tests) {
+     auto scan = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 4);
+     scan->execute();
+
+     ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);
+   }
+ }
 //
 // TEST_F(OperatorsTableScanTest, ScanOnReferencedDictColumn) {
 //   // we do not need to check for a non existing value, because that happens automatically when we scan the second chunk
