@@ -53,18 +53,28 @@ void _scan_value_segment(const std::shared_ptr<PosList> position_list, ChunkID c
 }
 
 template <typename T>
-void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id, std::shared_ptr<DictionarySegment<T>> typed_segment, const ScanType scan_type, const T search_value) {
+void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id, std::shared_ptr<DictionarySegment<T>> typed_segment, ScanType scan_type, const T search_value) {
   ValueID lower_bound = typed_segment->lower_bound(search_value);
+  ValueID upper_bound = typed_segment->upper_bound(search_value);
   ValueID search_value_id = INVALID_VALUE_ID;
 
   if(scan_type == ScanType::OpEquals || scan_type == ScanType::OpNotEquals) {
-    ValueID upper_bound = typed_segment->upper_bound(search_value);
     if(lower_bound != upper_bound) {
       // value does appear in dictionary
       search_value_id = lower_bound;
     }
-  } else {
-    // TODO(we): make working for >, < and <=
+  } else if(scan_type == ScanType::OpGreaterThanEquals) {
+    search_value_id = lower_bound;
+  } else if(scan_type == ScanType::OpGreaterThan) {
+    search_value_id = upper_bound;
+    scan_type = ScanType::OpGreaterThanEquals;
+  } else if(scan_type == ScanType::OpLessThanEquals) {
+    search_value_id = lower_bound;
+    if(lower_bound == upper_bound) {
+      // value does not appear in dictionary
+      scan_type = ScanType::OpLessThan;
+    }
+  } else if(scan_type == ScanType::OpLessThan) {
     search_value_id = lower_bound;
   }
 
