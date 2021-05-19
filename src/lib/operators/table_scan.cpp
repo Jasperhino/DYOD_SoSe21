@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <boost/core/typeinfo.hpp>
+#include <stdexcept>
 
 #include "resolve_type.hpp"
 #include "storage/reference_segment.hpp"
@@ -70,6 +71,7 @@ void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, Chun
   ValueID upper_bound = typed_segment->upper_bound(search_value);
   ValueID search_value_id = INVALID_VALUE_ID;
 
+  //TODO: inheritance?
   if(scan_type == ScanType::OpEquals || scan_type == ScanType::OpNotEquals) {
     if(lower_bound != upper_bound) {
       // value does appear in dictionary
@@ -103,7 +105,7 @@ void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, Chun
 
 std::shared_ptr<const Table> TableScan::_on_execute() {
   auto in = _left_input_table();
-  if(in->row_count() == 0) return in;
+  if(in->row_count() == 0) return in; //TODO(we): pass copy?
 
   std::shared_ptr<Table> out = std::make_shared<Table>();
   for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(in->column_count()); column_id < column_count;
@@ -112,22 +114,28 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
   }
 
   auto column_type = in->column_type(_column_id);
-  DebugAssert(column_type == boost::core::demangled_name(_search_value.type()),
-              "Incompatible data types for column and search value");
-
 
   resolve_data_type(column_type, [&](auto type) {
     using Type = typename decltype(type)::type;
 
-    Type search_value = type_cast<Type>(_search_value);
+    Type search_value;
+    try {
+      search_value = type_cast<Type>(_search_value);
+    } catch(...) {
+      //TODO: write test
+      throw std::invalid_argument("Incompatible data types for column and search value");
+    }
 
+    // TODO: move to value segment only?
     auto scan_type_lambda = _make_scan_type_lambda(search_value, _scan_type);
 
+    // TODO: many chunks or only one?
     for (auto chunk_id = ChunkID{0}, chunk_count = in->chunk_count(); chunk_id < chunk_count; ++chunk_id) {
       auto segment = in->get_chunk(chunk_id).get_segment(_column_id);
       auto new_chunk = std::make_shared<Chunk>();
       auto position_list = std::make_shared<PosList>();
 
+      //TODO: maybe inheritance?
       const auto typed_value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
       if(typed_value_segment != nullptr) {
         _scan_value_segment<Type>(position_list, chunk_id, typed_value_segment, scan_type_lambda);
@@ -141,11 +149,14 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
             _scan_reference_segment<Type>(position_list, chunk_id, reference_segment, scan_type_lambda);
           }
 
-        }
+        } // TODO: throw exception
       }
+
+      // TODO: if position list is empty, dont put it into chunk
 
       for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(in->column_count());
            column_id < column_count; ++column_id) {
+        //TODO: which table to reference?
         auto reference_segment = std::make_shared<ReferenceSegment>(in, column_id, position_list);
         new_chunk->add_segment(reference_segment);
       }
