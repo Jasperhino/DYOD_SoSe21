@@ -1,7 +1,6 @@
 #include "table_scan.hpp"
 
 #include <algorithm>
-#include <boost/core/typeinfo.hpp>
 #include <stdexcept>
 
 #include "resolve_type.hpp"
@@ -24,7 +23,7 @@ const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 
 template <typename T>
 std::function<bool(T&)> _make_scan_type_lambda(T search_value, const ScanType scan_type) {
-  switch(scan_type){
+  switch (scan_type) {
     case ScanType::OpEquals:
       return [search_value](T& v) { return v == search_value; };
     case ScanType::OpNotEquals:
@@ -42,19 +41,21 @@ std::function<bool(T&)> _make_scan_type_lambda(T search_value, const ScanType sc
 }
 
 template <typename T>
-void _scan_reference_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id, std::shared_ptr<ReferenceSegment> segment, std::function<bool(T&)> scan_type_lambda) {
-  //TODO(we): I think the performance is critical because currently we access every referenced value...
+void _scan_reference_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id,
+                             std::shared_ptr<ReferenceSegment> segment, std::function<bool(T&)> scan_type_lambda) {
   const auto referenced_pos_list = segment->pos_list();
-  for(size_t reference_index = 0, segment_size = segment->size(); reference_index < segment_size; ++reference_index) {
+  for (ChunkOffset reference_index{0}, segment_size = segment->size(); reference_index < segment_size;
+       ++reference_index) {
     T value = type_cast<T>((*segment)[reference_index]);
-    if(scan_type_lambda(value)) {
+    if (scan_type_lambda(value)) {
       position_list->push_back((*referenced_pos_list)[reference_index]);
     }
   }
 }
 
 template <typename T>
-void _scan_value_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id, std::shared_ptr<ValueSegment<T>> typed_segment, std::function<bool(T&)> scan_type_lambda) {
+void _scan_value_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id,
+                         std::shared_ptr<ValueSegment<T>> typed_segment, std::function<bool(T&)> scan_type_lambda) {
   auto values = typed_segment->values();
   auto iter = values.begin();
 
@@ -66,38 +67,40 @@ void _scan_value_segment(const std::shared_ptr<PosList> position_list, ChunkID c
 }
 
 template <typename T>
-void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id, std::shared_ptr<DictionarySegment<T>> typed_segment, ScanType scan_type, const T search_value) {
+void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, ChunkID chunk_id,
+                              std::shared_ptr<DictionarySegment<T>> typed_segment, ScanType scan_type,
+                              const T search_value) {
   ValueID lower_bound = typed_segment->lower_bound(search_value);
   ValueID upper_bound = typed_segment->upper_bound(search_value);
   ValueID search_value_id = INVALID_VALUE_ID;
 
-  //TODO: inheritance?
-  if(scan_type == ScanType::OpEquals || scan_type == ScanType::OpNotEquals) {
-    if(lower_bound != upper_bound) {
+  if (scan_type == ScanType::OpEquals || scan_type == ScanType::OpNotEquals) {
+    if (lower_bound != upper_bound) {
       // value does appear in dictionary
       search_value_id = lower_bound;
     }
-  } else if(scan_type == ScanType::OpGreaterThanEquals) {
+  } else if (scan_type == ScanType::OpGreaterThanEquals) {
     search_value_id = lower_bound;
-  } else if(scan_type == ScanType::OpGreaterThan) {
+  } else if (scan_type == ScanType::OpGreaterThan) {
     search_value_id = upper_bound;
     scan_type = ScanType::OpGreaterThanEquals;
-  } else if(scan_type == ScanType::OpLessThanEquals) {
+  } else if (scan_type == ScanType::OpLessThanEquals) {
     search_value_id = lower_bound;
-    if(lower_bound == upper_bound) {
+    if (lower_bound == upper_bound) {
       // value does not appear in dictionary
       scan_type = ScanType::OpLessThan;
     }
-  } else if(scan_type == ScanType::OpLessThan) {
+  } else if (scan_type == ScanType::OpLessThan) {
     search_value_id = lower_bound;
   }
 
   auto scan_type_lambda = _make_scan_type_lambda<ValueID>(search_value_id, scan_type);
 
   auto attribute_vector = typed_segment->attribute_vector();
-  for(size_t attribute_index = 0, attribute_count = attribute_vector->size(); attribute_index < attribute_count; ++attribute_index) {
+  for (size_t attribute_index = 0, attribute_count = attribute_vector->size(); attribute_index < attribute_count;
+       ++attribute_index) {
     ValueID value_id = attribute_vector->get(attribute_index);
-    if(scan_type_lambda(value_id)) {
+    if (scan_type_lambda(value_id)) {
       position_list->emplace_back(RowID{chunk_id, static_cast<ChunkOffset>(attribute_index)});
     }
   }
@@ -105,13 +108,14 @@ void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, Chun
 
 std::shared_ptr<const Table> TableScan::_on_execute() {
   auto in = _left_input_table();
-  if(in->row_count() == 0) return in; //TODO(we): pass copy?
 
   std::shared_ptr<Table> out = std::make_shared<Table>();
   for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(in->column_count()); column_id < column_count;
        ++column_id) {
     out->add_column_definition(in->column_name(column_id), in->column_type(column_id));
   }
+
+  if (in->row_count() == 0) return out;
 
   auto column_type = in->column_type(_column_id);
 
@@ -121,43 +125,41 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
     Type search_value;
     try {
       search_value = type_cast<Type>(_search_value);
-    } catch(...) {
-      //TODO: write test
+    } catch (...) {
       throw std::invalid_argument("Incompatible data types for column and search value");
     }
 
-    // TODO: move to value segment only?
     auto scan_type_lambda = _make_scan_type_lambda(search_value, _scan_type);
 
-    // TODO: many chunks or only one?
     for (auto chunk_id = ChunkID{0}, chunk_count = in->chunk_count(); chunk_id < chunk_count; ++chunk_id) {
       auto segment = in->get_chunk(chunk_id).get_segment(_column_id);
-      auto new_chunk = std::make_shared<Chunk>();
       auto position_list = std::make_shared<PosList>();
+      std::shared_ptr<const Table> referenced_table;
 
-      //TODO: maybe inheritance?
       const auto typed_value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
-      if(typed_value_segment != nullptr) {
+      if (typed_value_segment != nullptr) {
         _scan_value_segment<Type>(position_list, chunk_id, typed_value_segment, scan_type_lambda);
+        referenced_table = in;
       } else {
         const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
-        if(typed_dictionary_segment != nullptr) {
+        if (typed_dictionary_segment != nullptr) {
           _scan_dictionary_segment<Type>(position_list, chunk_id, typed_dictionary_segment, _scan_type, search_value);
+          referenced_table = in;
         } else {
           const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment);
-          if(reference_segment != nullptr) {
+          if (reference_segment != nullptr) {
             _scan_reference_segment<Type>(position_list, chunk_id, reference_segment, scan_type_lambda);
+            referenced_table = reference_segment->referenced_table();
+          } else {
+            throw std::invalid_argument("Segment has unsupported type.");
           }
-
-        } // TODO: throw exception
+        }
       }
 
-      // TODO: if position list is empty, dont put it into chunk
-
+      auto new_chunk = std::make_shared<Chunk>();
       for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(in->column_count());
            column_id < column_count; ++column_id) {
-        //TODO: which table to reference?
-        auto reference_segment = std::make_shared<ReferenceSegment>(in, column_id, position_list);
+        auto reference_segment = std::make_shared<ReferenceSegment>(referenced_table, column_id, position_list);
         new_chunk->add_segment(reference_segment);
       }
 

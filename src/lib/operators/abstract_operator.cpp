@@ -17,8 +17,7 @@ AbstractOperator::AbstractOperator(const std::shared_ptr<const AbstractOperator>
 void AbstractOperator::execute() { _output = _on_execute(); }
 
 std::shared_ptr<const Table> AbstractOperator::get_output() const {
-  // TODO(anyone): You should place some meaningful checks here
-
+  Assert(_output != nullptr, "Operator did not execute!");
   return _output;
 }
 

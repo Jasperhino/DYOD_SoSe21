@@ -58,7 +58,6 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
 
 void Table::create_new_chunk() { _chunks.push_back(std::make_shared<Chunk>()); }
 
-// TODO(we): We changed signature here
 void Table::emplace_chunk(std::shared_ptr<Chunk> chunk) {
   if (_chunks.front()->size() == 0) {
     _chunks[0] = chunk;
