@@ -1,30 +1,31 @@
 #include <memory>
 #include <string>
 
+#include "../base_test.hpp"
 #include "gtest/gtest.h"
 
-#include "../../lib/resolve_type.hpp"
-#include "../../lib/storage/base_segment.hpp"
-#include "../../lib/storage/dictionary_segment.hpp"
-#include "../../lib/storage/value_segment.hpp"
+#include "resolve_type.hpp"
+#include "storage/base_segment.hpp"
+#include "storage/dictionary_segment.hpp"
+#include "storage/value_segment.hpp"
 
 namespace opossum {
 
-class StorageDictionarySegmentTest : public ::testing::Test {
+class StorageDictionarySegmentTest : public BaseTest {
  protected:
-  std::shared_ptr<opossum::ValueSegment<int>> vc_int = std::make_shared<opossum::ValueSegment<int>>();
-  std::shared_ptr<opossum::ValueSegment<std::string>> vc_str = std::make_shared<opossum::ValueSegment<std::string>>();
+  std::shared_ptr<ValueSegment<int>> vc_int = std::make_shared<ValueSegment<int>>();
+  std::shared_ptr<ValueSegment<std::string>> vc_str = std::make_shared<ValueSegment<std::string>>();
 };
 
 template <typename T>
-std::shared_ptr<opossum::DictionarySegment<T>> _convert_to_dictionary_segment(
-    const std::shared_ptr<opossum::ValueSegment<T>> value_segment, const std::string& type_string) {
+std::shared_ptr<DictionarySegment<T>> _convert_to_dictionary_segment(
+    const std::shared_ptr<ValueSegment<T>> value_segment, const std::string& type_string) {
   std::shared_ptr<BaseSegment> col;
   resolve_data_type(type_string, [&](auto type) {
     using Type = typename decltype(type)::type;
     col = std::make_shared<DictionarySegment<Type>>(value_segment);
   });
-  return std::dynamic_pointer_cast<opossum::DictionarySegment<T>>(col);
+  return std::dynamic_pointer_cast<DictionarySegment<T>>(col);
 }
 
 TEST_F(StorageDictionarySegmentTest, CompressSegmentString) {
@@ -127,14 +128,14 @@ TEST_F(StorageDictionarySegmentTest, LowerUpperBound) {
 
   auto dict_col = _convert_to_dictionary_segment(vc_int, "int");
 
-  EXPECT_EQ(dict_col->lower_bound(4), (opossum::ValueID)2);
-  EXPECT_EQ(dict_col->upper_bound(4), (opossum::ValueID)3);
+  EXPECT_EQ(dict_col->lower_bound(4), (ValueID)2);
+  EXPECT_EQ(dict_col->upper_bound(4), (ValueID)3);
 
-  EXPECT_EQ(dict_col->lower_bound(5), (opossum::ValueID)3);
-  EXPECT_EQ(dict_col->upper_bound(5), (opossum::ValueID)3);
+  EXPECT_EQ(dict_col->lower_bound(5), (ValueID)3);
+  EXPECT_EQ(dict_col->upper_bound(5), (ValueID)3);
 
-  EXPECT_EQ(dict_col->lower_bound(15), opossum::INVALID_VALUE_ID);
-  EXPECT_EQ(dict_col->upper_bound(15), opossum::INVALID_VALUE_ID);
+  EXPECT_EQ(dict_col->lower_bound(15), INVALID_VALUE_ID);
+  EXPECT_EQ(dict_col->upper_bound(15), INVALID_VALUE_ID);
 }
 
 TEST_F(StorageDictionarySegmentTest, LowerUpperBoundAllTypeVariant) {
@@ -142,14 +143,14 @@ TEST_F(StorageDictionarySegmentTest, LowerUpperBoundAllTypeVariant) {
 
   auto const dict_col = _convert_to_dictionary_segment(vc_int, "int");
 
-  EXPECT_EQ(dict_col->lower_bound(AllTypeVariant{4}), (opossum::ValueID)2);
-  EXPECT_EQ(dict_col->upper_bound(AllTypeVariant{4}), (opossum::ValueID)3);
+  EXPECT_EQ(dict_col->lower_bound(AllTypeVariant{4}), (ValueID)2);
+  EXPECT_EQ(dict_col->upper_bound(AllTypeVariant{4}), (ValueID)3);
 
-  EXPECT_EQ(dict_col->lower_bound(AllTypeVariant{5}), (opossum::ValueID)3);
-  EXPECT_EQ(dict_col->upper_bound(AllTypeVariant{5}), (opossum::ValueID)3);
+  EXPECT_EQ(dict_col->lower_bound(AllTypeVariant{5}), (ValueID)3);
+  EXPECT_EQ(dict_col->upper_bound(AllTypeVariant{5}), (ValueID)3);
 
-  EXPECT_EQ(dict_col->lower_bound(AllTypeVariant{15}), opossum::INVALID_VALUE_ID);
-  EXPECT_EQ(dict_col->upper_bound(AllTypeVariant{15}), opossum::INVALID_VALUE_ID);
+  EXPECT_EQ(dict_col->lower_bound(AllTypeVariant{15}), INVALID_VALUE_ID);
+  EXPECT_EQ(dict_col->upper_bound(AllTypeVariant{15}), INVALID_VALUE_ID);
 }
 
 TEST_F(StorageDictionarySegmentTest, AttributeVectorWidth) {

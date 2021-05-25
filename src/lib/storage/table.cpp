@@ -21,7 +21,7 @@ namespace opossum {
 
 Table::Table(const ChunkOffset target_chunk_size) {
   _target_chunk_size = target_chunk_size;
-  _chunks.push_back(std::make_shared<Chunk>());
+  create_new_chunk();
 }
 
 void Table::_add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type) {
@@ -32,11 +32,15 @@ void Table::_add_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::stri
   });
 }
 
-void Table::add_column(const std::string& name, const std::string& type) {
-  Assert(!row_count(), "add_column must be called before adding entries");
+void Table::add_column_definition(const std::string& name, const std::string& type) {
+  Assert(!row_count(), "column must be added before adding entries");
   _column_names.push_back(name);
   _column_types.push_back(type);
   _name_id_mapping[name] = static_cast<ColumnID>(_column_names.size() - 1);
+}
+
+void Table::add_column(const std::string& name, const std::string& type) {
+  add_column_definition(name, type);
   _add_segment_to_chunk(_chunks.back(), type);
 }
 
@@ -50,6 +54,16 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
     _chunks.push_back(chunk);
   }
   _chunks.back()->append(values);
+}
+
+void Table::create_new_chunk() { _chunks.push_back(std::make_shared<Chunk>()); }
+
+void Table::emplace_chunk(std::shared_ptr<Chunk> chunk) {
+  if (_chunks.front()->size() == 0) {
+    _chunks[0] = chunk;
+  } else {
+    _chunks.push_back(chunk);
+  }
 }
 
 ColumnCount Table::column_count() const { return static_cast<ColumnCount>(_column_names.size()); }
