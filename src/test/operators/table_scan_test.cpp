@@ -272,4 +272,12 @@ TEST_F(OperatorsTableScanTest, ScanOnWideDictionarySegment) {
   EXPECT_EQ(scan_2->get_output()->row_count(), static_cast<size_t>(37));
 }
 
+TEST_F(OperatorsTableScanTest, PropertyGetters) {
+  auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThan, 123);
+
+  EXPECT_EQ(scan->column_id(), ColumnID{0});
+  EXPECT_EQ(scan->scan_type(), ScanType::OpGreaterThan);
+  EXPECT_EQ(type_cast<int>(scan->search_value()), 123);
+}
+
 }  // namespace opossum

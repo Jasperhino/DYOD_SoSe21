@@ -100,4 +100,9 @@ TEST_F(ReferenceSegmentTest, MemoryUsage) {
   EXPECT_EQ(reference_segment.estimate_memory_usage(), size_t{3 * sizeof(RowID)});
 }
 
+TEST_F(ReferenceSegmentTest, GetReferencedColumnID) {
+  auto reference_segment = ReferenceSegment(_test_table, ColumnID{123}, std::make_shared<PosList>());
+  EXPECT_EQ(reference_segment.referenced_column_id(), ColumnID{123});
+}
+
 }  // namespace opossum

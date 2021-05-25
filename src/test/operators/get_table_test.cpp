@@ -23,6 +23,7 @@ TEST_F(OperatorsGetTableTest, GetOutput) {
   gt->execute();
 
   EXPECT_EQ(gt->get_output(), _test_table);
+  EXPECT_EQ(gt->table_name(), "aNiceTestTable");
 }
 
 TEST_F(OperatorsGetTableTest, ThrowsUnknownTableName) {
