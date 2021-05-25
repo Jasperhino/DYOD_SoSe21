@@ -7,9 +7,7 @@
 namespace opossum {
 
 template <typename T>
-FixedSizeAttributeVector<T>::FixedSizeAttributeVector(const size_t size) {
-  _attribute_vector = std::vector<T>(size);
-}
+FixedSizeAttributeVector<T>::FixedSizeAttributeVector(const size_t size) : _attribute_vector(std::vector<T>(size)) {}
 
 template <typename T>
 ValueID FixedSizeAttributeVector<T>::get(const size_t i) const {

@@ -159,25 +159,27 @@ TEST_F(StorageDictionarySegmentTest, AttributeVectorWidth) {
 }
 
 TEST_F(StorageDictionarySegmentTest, AttributeVector8) {
-  auto attribute_vector = DictionarySegment<int>::attribute_vector_for_dictionary(1, 1);
+  auto attribute_vector =
+      DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint8_t>::max(), 1);
   EXPECT_EQ(attribute_vector->width(), sizeof(uint8_t));
 }
 
 TEST_F(StorageDictionarySegmentTest, AttributeVector16) {
   auto attribute_vector =
-      DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint8_t>::max(), 1);
+      DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint16_t>::max(), 1);
   EXPECT_EQ(attribute_vector->width(), sizeof(uint16_t));
 }
 
 TEST_F(StorageDictionarySegmentTest, AttributeVector32) {
   auto attribute_vector =
-      DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint16_t>::max(), 1);
+      DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint32_t>::max(), 1);
   EXPECT_EQ(attribute_vector->width(), sizeof(uint32_t));
 }
 
 TEST_F(StorageDictionarySegmentTest, AttributeVectorTooBig) {
-  EXPECT_THROW(DictionarySegment<int>::attribute_vector_for_dictionary(std::numeric_limits<std::uint32_t>::max(), 1),
-               std::exception);
+  uint64_t dictionary_size = std::numeric_limits<std::uint32_t>::max();
+  dictionary_size++;
+  EXPECT_THROW(DictionarySegment<int>::attribute_vector_for_dictionary(dictionary_size, 1), std::exception);
 }
 
 TEST_F(StorageDictionarySegmentTest, MemoryUsage) {

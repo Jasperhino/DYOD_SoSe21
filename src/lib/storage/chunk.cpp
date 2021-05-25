@@ -21,8 +21,8 @@ void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
 }
 
 void Chunk::replace_segment(ColumnID column_id, const std::shared_ptr<BaseSegment> segment) {
-  DebugAssert(column_id < column_count(), "segment with index not existing wrong size");
-  _segments[column_id] = segment;
+  std::unique_lock lock(_mutex);
+  _segments.at(column_id) = segment;
 }
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
