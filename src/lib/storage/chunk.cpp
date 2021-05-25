@@ -17,6 +17,7 @@ namespace opossum {
 void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
   DebugAssert(segment == nullptr || column_count() == 0 || segment->size() == size(),
               "Segment has wrong size. Should be " + std::to_string(size()));
+  std::unique_lock lock(_mutex);
   _segments.push_back(segment);
 }
 
