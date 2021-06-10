@@ -40,7 +40,7 @@ class ReferenceSegment : public BaseSegment {
  protected:
   std::shared_ptr<const Table> _referenced_table;
   ColumnID _referenced_column_id;
-  std::shared_ptr<const PosList> _pos;
+  std::shared_ptr<const PosList> _pos_list;
 };
 
 }  // namespace opossum

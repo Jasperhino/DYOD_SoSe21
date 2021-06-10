@@ -22,7 +22,7 @@ ScanType TableScan::scan_type() const { return _scan_type; }
 const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 
 template <typename T>
-std::function<bool(T&)> _make_scan_type_lambda(T search_value, const ScanType scan_type) {
+std::function<bool(T&)> _make_scan_type_lambda(T& search_value, const ScanType scan_type) {
   switch (scan_type) {
     case ScanType::OpEquals:
       return [search_value](T& v) { return v == search_value; };
@@ -37,7 +37,7 @@ std::function<bool(T&)> _make_scan_type_lambda(T search_value, const ScanType sc
     case ScanType::OpGreaterThanEquals:
       return [search_value](T& v) { return v >= search_value; };
   }
-  return nullptr;
+  Assert(false, "Unsupported ScanType.");
 }
 
 template <typename T>
@@ -74,24 +74,31 @@ void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, Chun
   ValueID upper_bound = typed_segment->upper_bound(search_value);
   ValueID search_value_id = INVALID_VALUE_ID;
 
-  if (scan_type == ScanType::OpEquals || scan_type == ScanType::OpNotEquals) {
-    if (lower_bound != upper_bound) {
-      // value does appear in dictionary
+  switch (scan_type) {
+    case ScanType::OpEquals:
+    case ScanType::OpNotEquals:
+      if (lower_bound != upper_bound) {
+        // value does appear in dictionary
+        search_value_id = lower_bound;
+      }
+      break;
+    case ScanType::OpGreaterThanEquals:
       search_value_id = lower_bound;
-    }
-  } else if (scan_type == ScanType::OpGreaterThanEquals) {
-    search_value_id = lower_bound;
-  } else if (scan_type == ScanType::OpGreaterThan) {
-    search_value_id = upper_bound;
-    scan_type = ScanType::OpGreaterThanEquals;
-  } else if (scan_type == ScanType::OpLessThanEquals) {
-    search_value_id = lower_bound;
-    if (lower_bound == upper_bound) {
-      // value does not appear in dictionary
-      scan_type = ScanType::OpLessThan;
-    }
-  } else if (scan_type == ScanType::OpLessThan) {
-    search_value_id = lower_bound;
+      break;
+    case ScanType::OpGreaterThan:
+      search_value_id = upper_bound;
+      scan_type = ScanType::OpGreaterThanEquals;
+      break;
+    case ScanType::OpLessThanEquals:
+      search_value_id = lower_bound;
+      if (lower_bound == upper_bound) {
+        // value does not appear in dictionary
+        scan_type = ScanType::OpLessThan;
+      }
+      break;
+    case ScanType::OpLessThan:
+      search_value_id = lower_bound;
+      break;
   }
 
   auto scan_type_lambda = _make_scan_type_lambda<ValueID>(search_value_id, scan_type);
@@ -107,19 +114,19 @@ void _scan_dictionary_segment(const std::shared_ptr<PosList> position_list, Chun
 }
 
 std::shared_ptr<const Table> TableScan::_on_execute() {
-  auto in = _left_input_table();
+  auto input_table = _left_input_table();
 
-  std::shared_ptr<Table> out = std::make_shared<Table>();
-  for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(in->column_count()); column_id < column_count;
-       ++column_id) {
-    out->add_column_definition(in->column_name(column_id), in->column_type(column_id));
+  std::shared_ptr<Table> output_table = std::make_shared<Table>();
+  for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(input_table->column_count());
+       column_id < column_count; ++column_id) {
+    output_table->add_column_definition(input_table->column_name(column_id), input_table->column_type(column_id));
   }
 
-  if (in->row_count() == 0) return out;
+  if (input_table->row_count() == 0) return output_table;
 
-  auto column_type = in->column_type(_column_id);
+  auto column_type_name = input_table->column_type(_column_id);
 
-  resolve_data_type(column_type, [&](auto type) {
+  resolve_data_type(column_type_name, [&](auto type) {
     using Type = typename decltype(type)::type;
 
     Type search_value;
@@ -131,23 +138,23 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
 
     auto scan_type_lambda = _make_scan_type_lambda(search_value, _scan_type);
 
-    for (auto chunk_id = ChunkID{0}, chunk_count = in->chunk_count(); chunk_id < chunk_count; ++chunk_id) {
-      auto segment = in->get_chunk(chunk_id).get_segment(_column_id);
+    for (auto chunk_id = ChunkID{0}, chunk_count = input_table->chunk_count(); chunk_id < chunk_count; ++chunk_id) {
+      auto segment = input_table->get_chunk(chunk_id).get_segment(_column_id);
       auto position_list = std::make_shared<PosList>();
       std::shared_ptr<const Table> referenced_table;
 
       const auto typed_value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
-      if (typed_value_segment != nullptr) {
+      if (typed_value_segment) {
         _scan_value_segment<Type>(position_list, chunk_id, typed_value_segment, scan_type_lambda);
-        referenced_table = in;
+        referenced_table = input_table;
       } else {
         const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
-        if (typed_dictionary_segment != nullptr) {
+        if (typed_dictionary_segment) {
           _scan_dictionary_segment<Type>(position_list, chunk_id, typed_dictionary_segment, _scan_type, search_value);
-          referenced_table = in;
+          referenced_table = input_table;
         } else {
           const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment);
-          if (reference_segment != nullptr) {
+          if (reference_segment) {
             _scan_reference_segment<Type>(position_list, chunk_id, reference_segment, scan_type_lambda);
             referenced_table = reference_segment->referenced_table();
           } else {
@@ -157,17 +164,17 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
       }
 
       auto new_chunk = std::make_shared<Chunk>();
-      for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(in->column_count());
+      for (auto column_id = ColumnID{0}, column_count = static_cast<ColumnID>(input_table->column_count());
            column_id < column_count; ++column_id) {
         auto reference_segment = std::make_shared<ReferenceSegment>(referenced_table, column_id, position_list);
         new_chunk->add_segment(reference_segment);
       }
 
-      out->emplace_chunk(new_chunk);
+      output_table->emplace_chunk(new_chunk);
     }
   });
 
-  return out;
+  return output_table;
 }
 
 }  // namespace opossum

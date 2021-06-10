@@ -14,7 +14,10 @@ AbstractOperator::AbstractOperator(const std::shared_ptr<const AbstractOperator>
                                    const std::shared_ptr<const AbstractOperator> right)
     : _left_input(left), _right_input(right) {}
 
-void AbstractOperator::execute() { _output = _on_execute(); }
+void AbstractOperator::execute() {
+  Assert(_output == nullptr, "Operator did already execute!");
+  _output = _on_execute();
+}
 
 std::shared_ptr<const Table> AbstractOperator::get_output() const {
   Assert(_output != nullptr, "Operator did not execute!");
